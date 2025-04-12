@@ -12,3 +12,21 @@
                 return 'Unknown';
         }
     };
+
+export const formatDate = (dateStr: string | Date) => {
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const month = date.toLocaleString('default', { month: 'long' }); // or 'short' for Apr
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+    };
+
+export function getLeaveStatus(startDate: string | Date, endDate: string | Date) {
+        const today = new Date();
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+      
+        if (today < start) return "Pending";
+        if (today >= start && today <= end) return "Active";
+        return "Completed";
+      }

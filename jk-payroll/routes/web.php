@@ -23,6 +23,23 @@ Route::get('/security-management/create-security', function () {
 })->name('CreateSecurity');
 
 
+Route::get('/inventory-management', function () {
+    return Inertia::render('InventoryManagment/index');
+})->name('InventoryManagment');
+Route::get('/inventory-management/create-inventory', function () {
+    return Inertia::render('InventoryManagment/CreateInventory');
+})->name('CreateInventory');
+
+
+Route::get('/leave-management', function () {
+    return Inertia::render('LeaveManagment/index');
+})->name('LeaveManagment');
+
+Route::get('/leave-management/create-leave', function () {
+    return Inertia::render('LeaveManagment/Createleave');
+})->name('Createleave');
+
+
 // Route::middleware([
 //     'auth',
 //     ValidateSessionWithWorkOS::class,

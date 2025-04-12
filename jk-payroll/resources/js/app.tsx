@@ -27,8 +27,16 @@ createInertiaApp({
 //php artisan make:model {model name} -a 
 //php artisan route:list
 
+///php artisan make:model LeaveBalance -a 
+
 
 // php artisan storage:link -> run in prod
 
 // This will set light / dark mode on load...
+
+
+//---when database migration defined :
+
+//php artisan migrate
+
 initializeTheme();

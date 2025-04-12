@@ -1,6 +1,6 @@
-import { getBankDetails } from '@/services/security-managment.service';
+import { getBankDetails, leaveDetails } from '@/services/security-managment.service';
 import Security from '@/types/jk/security';
-import { getStatusText } from '@/utils/security';
+import { formatDate, getLeaveStatus, getStatusText } from '@/utils/security';
 import { useEffect, useState } from 'react';
 
 interface ViewSecurityProps {
@@ -10,6 +10,7 @@ interface ViewSecurityProps {
 
 const ViewSecurity = ({ security, back }: ViewSecurityProps) => {
     const [bankDetails, setBankDetials] = useState<any>(null);
+    const [leaves, setLeaves] = useState<any>([]);
 
     const fetchBankDetails = async () => {
         try {
@@ -22,16 +23,20 @@ const ViewSecurity = ({ security, back }: ViewSecurityProps) => {
         }
     };
 
-    const formatDate = (dateStr: string|  Date) => {
-        const date = new Date(dateStr);
-        const day = date.getDate();
-        const month = date.toLocaleString('default', { month: 'long' }); // or 'short' for Apr
-        const year = date.getFullYear();
-        return `${day} ${month} ${year}`;
-      };
+    const fetchLeaveDetails = async ()=>{
+        try {
+            const response = await leaveDetails(security.securityId);
+            console.log(response.data);
+            setLeaves(response.data);
+
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
     useEffect(() => {
         fetchBankDetails();
+        fetchLeaveDetails();
     }, []);
 
     return (
@@ -136,6 +141,53 @@ const ViewSecurity = ({ security, back }: ViewSecurityProps) => {
                         </div>
                     </div>
                 </div>
+
+
+
+                    {/* Leave Details */}
+                        {leaves.length && (
+                              <div className="mt-10 rounded-xl border border-gray-200 bg-gray-100 p-8 shadow-lg">
+                              <div className="grid grid-cols-1 gap-12">
+                                  <div>
+                                      <h2 className="mb-4 border-b border-gray-300 pb-2 text-2xl font-bold text-gray-800">Leave Details</h2>
+                                      <div className="space-y-3 text-gray-700">
+                                          <table className="w-full border-collapse">
+                                                    <thead className="bg-gray-200 text-gray-700">
+                                                      <tr>
+                                                        <th className="px-4 py-3 text-left">#</th>
+                                                        <th className="px-4 py-3 text-left">Type</th>
+                                                        <th className="px-4 py-3 text-left">Reason</th>
+                                                        <th className="px-4 py-3 text-left">Description</th>
+                                                        <th className="px-4 py-3 text-left">Start</th>
+                                                        <th className="px-4 py-3 text-left">End</th>
+                                                        <th className="px-4 py-3 text-left">Status</th>
+                                                      </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                      {leaves.length ? leaves.map((leave:any, index: number) => (
+                                                        <tr key={index} className="border-b hover:bg-gray-100">
+                                                          <td className="px-4 py-3">{index+1}</td>
+                                                          <td className="px-4 py-3">{leave.leave_type}</td>
+                                                          <td className="px-4 py-3">{leave.reason}</td>
+                                                          <td className="px-4 py-3">{leave.description}</td>
+                                                          <td className="px-4 py-3">{formatDate(leave.start_date)}</td>
+                                                          <td className="px-4 py-3">{formatDate(leave.end_date)}</td>
+                                                          <td className="px-4 py-3">
+                                                            <span className={`rounded px-2 py-1 text-white ${getLeaveStatus(leave.start_date, leave.end_date) === 'Pending' ? 'bg-yellow-500' : getLeaveStatus(leave.start_date, leave.end_date) === 'Completed'? 'bg-green-500' : 'bg-red-500'}`}>
+                                                              {getLeaveStatus(leave.start_date, leave.end_date)}
+                                                            </span>
+                                                          </td>
+                                                        </tr>
+                                                      )) : <tr><td colSpan={7} className="px-4 py-6 text-center font-bold">No Leaves Found</td></tr>}
+                                                    </tbody>
+                                                  </table>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                        )}
+
+              
 
                 {/* <button onClick={back} className="rounded bg-yellow-500 px-3 py-1 text-white shadow hover:bg-yellow-600">
                 Back

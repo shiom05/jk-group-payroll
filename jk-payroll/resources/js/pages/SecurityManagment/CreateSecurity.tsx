@@ -81,6 +81,14 @@ const CreateSecurity = () => {
         }
     }
 
+    const createLeaveBalanceRecord = async (id: any)=>{  
+    try {
+        await axios.post('/api/security-leave-balances', {security_id: id});
+      } catch (error) {
+        console.error('Failed to create leav balance:', error);
+      }
+    }
+
     const handleSubmit = async (e: any) => {
         e.preventDefault();
         
@@ -106,7 +114,8 @@ const CreateSecurity = () => {
                     },
                 });
             console.log(response.data);
-            saveBankDetials(response.data.securityId)
+            saveBankDetials(response.data.securityId);
+            createLeaveBalanceRecord(response.data.securityId);
           
         } catch (error) {
             console.error('Error saving security:', error);
