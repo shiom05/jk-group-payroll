@@ -40,14 +40,11 @@ Route::get('/leave-management/create-leave', function () {
 })->name('Createleave');
 
 
-// Route::middleware([
-//     'auth',
-//     ValidateSessionWithWorkOS::class,
-// ])->group(function () {
-//     Route::get('dashboard', function () {
-//         return Inertia::render('dashboard');
-//     })->name('dashboard');
-// });
+Route::get('/shift-management', function () {
+    return Inertia::render('ShiftManagement/index');
+})->name('ShiftManagement');
+
+
 
 Route::get('/workos-data', [WorkOSController::class, 'fetchData']);
 
