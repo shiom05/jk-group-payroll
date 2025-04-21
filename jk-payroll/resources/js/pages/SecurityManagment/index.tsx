@@ -28,7 +28,7 @@ const SecurityManagment = () => {
 
     return (
         <Layout>
-            {(!toViewSecuritySelected && !toEditSecuritySelected) && <div className="  p-6">
+            {(!toViewSecuritySelected && !toEditSecuritySelected) && <div className="min-h-screen  p-6">
                 <h1 className="mb-4 text-3xl font-bold text-gray-800">Security Managment</h1>
 
 
