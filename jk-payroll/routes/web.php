@@ -44,6 +44,10 @@ Route::get('/shift-management', function () {
     return Inertia::render('ShiftManagement/index');
 })->name('ShiftManagement');
 
+Route::get('/expense-management', function () {
+    return Inertia::render('ExpenseManagment/index');
+})->name('ExpenseManagment');
+
 
 
 Route::get('/workos-data', [WorkOSController::class, 'fetchData']);

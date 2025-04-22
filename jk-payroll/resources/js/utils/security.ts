@@ -1,3 +1,5 @@
+import Security from "@/types/jk/security";
+
     export const getStatusText = (status: number) => {
         switch (status) {
             case 200:
@@ -30,3 +32,19 @@ export function getLeaveStatus(startDate: string | Date, endDate: string | Date)
         if (today >= start && today <= end) return "Active";
         return "Completed";
       }
+
+
+export const getSecuiryDropdownOptions = (securites: Security[]) =>{
+
+    const arrayOptions: {value: string, label: string}[] = [];
+
+    securites.forEach((security: Security)=>{
+        arrayOptions.push({
+            value: security.securityId,
+            label: security.securityName
+        })
+    });
+
+    return arrayOptions;
+
+}

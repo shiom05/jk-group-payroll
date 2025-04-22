@@ -11,7 +11,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Layout>
+            {/* <Layout> */}
                 <div className="flex h-screen items-center justify-center bg-gradient-to-br from-gray-100 to-gray-300">
                     <div className="w-80 rounded-2xl bg-white p-10 text-center shadow-xl">
                         <h2 className="mb-6 text-3xl font-bold text-gray-800">Login</h2>
@@ -20,7 +20,7 @@ export default function Welcome() {
                         </button>
                     </div>
                 </div>
-            </Layout>
+            {/* </Layout> */}
         </>
     );
 }
