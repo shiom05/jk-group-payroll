@@ -30,7 +30,10 @@ class Security extends Model
         'securityName',
         'securityDob',
         'securityNicNumber',
-        'securityAddress',
+        
+        'securityPermanentAddress',
+        'securityCurrentAddress',
+
         'securityPrimaryContact',
         'securitySecondaryContact',
         'securityPhoto',
@@ -39,7 +42,22 @@ class Security extends Model
         'securityBirthCertificateUploaded',
         'securityGramasewakaLetterUploaded',
         'securityStatus',
-        'securityDateOfJoin'
+        'securityDateOfJoin',
+        'securityType',
+        
+        'securityGender',
+        'securityDistrict',
+        'securityPoliceDivision',
+        'securityGramaNiladariDivision',
+        'securityEducationalInfo',
+        'securityMaritalStatus',
+        'securityPreviousWorkplace',
+        'securityExperience',
+        'securityEmergencyContactName',
+        'securityEmergencyContactAddress',
+        'securityEmergencyContactNumber',
+        'securityAdditionalInfo',
+        'securityEpfNumber'
     ];
 
     protected $casts = [

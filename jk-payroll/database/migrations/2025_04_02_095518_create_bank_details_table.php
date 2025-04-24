@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('bank_name');
             $table->string('bank_branch');
             $table->string('account_number')->unique();
-            $table->string('bank_code');
-            $table->string('branch_code');
+            $table->string('bank_account_holder_name')->nullable();
+            $table->boolean('is_commercial_bank')->default(false);
             $table->timestamps();
 
             
@@ -26,8 +26,6 @@ return new class extends Migration
             ->references('securityId')
             ->on('securities')
             ->onDelete('cascade');
-
-
         });
     }
 

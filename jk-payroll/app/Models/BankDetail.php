@@ -15,12 +15,13 @@ class BankDetail extends Model
         'bank_name',
         'bank_branch',
         'account_number',
-        'bank_code',
-        'branch_code'
+        'bank_account_holder_name',
+        'is_commercial_bank',
     ];
 
     public function security()
     {
-        return $this->belongsTo(Security::class);
+        // return $this->belongsTo(Security::class);
+        return $this->belongsTo(Security::class, 'security_id', 'securityId');
     }
 }

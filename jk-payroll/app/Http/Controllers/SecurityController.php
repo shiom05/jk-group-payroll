@@ -32,15 +32,41 @@ class SecurityController extends Controller
      */
     public function store(StoreSecurityRequest $request)
     {
+        // Log the incoming request body
+        \Log::info('Security Store Request:', [
+            'request_data' => $request->all(),
+            'files' => $request->hasFile('securityPhoto') ? 'File present' : 'No file'
+        ]);
+
+
         $validator = Validator::make($request->all(), [
             'securityName' => ['required'],
             'securityDob' => ['required'],
             'securityNicNumber' => ['required'],
-            'securityAddress' => ['required'],
             'securityPrimaryContact' => ['required'],
             'securitySecondaryContact' => ['required'],
             'securityPhoto' => ['required'],
             'securityDateOfJoin' => ['required'],
+
+            'securityType' => ['required', 'in:LSO,OIC,JSO,SSO,CSO'],
+            'securityPermanentAddress' => ['required'],
+            'securityCurrentAddress' => ['required'],
+            'securityGender' => ['required', 'in:male,female'],
+            'securityDistrict' => ['required'],
+            'securityPoliceDivision' => ['required'],
+            'securityGramaNiladariDivision' => ['required'],
+            'securityEducationalInfo' => ['required'],
+            'securityMaritalStatus' => ['required', function ($attribute, $value, $fail) {
+                if (!in_array($value, ['true', 'false', true, false])) {
+                    $fail('The '.$attribute.' field must be true or false.');
+                }
+            }],
+            'securityPreviousWorkplace' => ['required'],
+            'securityExperience' => ['required'],
+            'securityEmergencyContactName' => ['required'],
+            'securityEmergencyContactAddress' => ['required'],
+            'securityEmergencyContactNumber' => ['required'],
+            'securityAdditionalInfo' => ['nullable'],
         ]);
 
         if ($validator->fails()) {
@@ -100,11 +126,26 @@ class SecurityController extends Controller
             'securityName' => ['required'],
             'securityDob' => ['required'],
             'securityNicNumber' => ['required'],
-            'securityAddress' => ['required'],
             'securityPrimaryContact' => ['required'],
             'securitySecondaryContact' => ['required'],
             'securityPhoto' => ['required'],
             'securityDateOfJoin' => ['required'],
+            
+            'securityType' => ['required', 'in:LSO,OIC,JSO,SSO,CSO'],
+            'securityPermanentAddress' => ['required'],
+            'securityCurrentAddress' => ['required'],
+            'securityGender' => ['required', 'in:male,female'],
+            'securityDistrict' => ['required'],
+            'securityPoliceDivision' => ['required'],
+            'securityGramaNiladariDivision' => ['required'],
+            'securityEducationalInfo' => ['required'],
+            'securityMaritalStatus' => ['required', 'boolean'],
+            'securityPreviousWorkplace' => ['required'],
+            'securityExperience' => ['required'],
+            'securityEmergencyContactName' => ['required'],
+            'securityEmergencyContactAddress' => ['required'],
+            'securityEmergencyContactNumber' => ['required'],
+            'securityAdditionalInfo' => ['nullable'],
         ]);
 
         Log::info("Validated data: ", $validatedData);

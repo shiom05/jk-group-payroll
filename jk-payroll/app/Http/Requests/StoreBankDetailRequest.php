@@ -25,8 +25,7 @@ class StoreBankDetailRequest extends FormRequest
             'bank_name' => 'required|string|max:255',
             'bank_branch' => 'required|string|max:255',
             'account_number' => 'required|string|unique:bank_details',
-            'bank_code' => 'required|string|max:50',
-            'branch_code' => 'required|string|max:50'
+            'bank_account_holder_name' => 'required|string|max:100',
         ];
     }
 }

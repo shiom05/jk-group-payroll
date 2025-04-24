@@ -53,8 +53,8 @@ class BankDetailController extends Controller
             'bank_name' => 'required|string',
             'bank_branch' => 'required|string',
             'account_number' => 'required|string|unique:bank_details,account_number',
-            'bank_code' => 'required|string',
-            'branch_code' => 'required|string',
+            'bank_account_holder_name' => 'required|string',
+            'is_commercial_bank' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -74,8 +74,8 @@ class BankDetailController extends Controller
         'bank_name' => $request->bank_name,
         'bank_branch' => $request->bank_branch,
         'account_number' => $request->account_number,
-        'bank_code' => $request->bank_code,
-        'branch_code' => $request->branch_code,
+        'bank_account_holder_name' => $request->bank_account_holder_name,
+        'is_commercial_bank' => $request->is_commercial_bank,
     ]);
     return response()->json($bankDetail, 201);
 
@@ -107,9 +107,9 @@ class BankDetailController extends Controller
         $validator = Validator::make($request->all(), [
             'bank_name' => 'sometimes|required|string',
             'bank_branch' => 'sometimes|required|string',
+            'bank_account_holder_name' => 'sometimes|required|string',
+            'is_commercial_bank' => 'sometimes|required|boolean',
             'account_number' => 'sometimes|required|string|unique:bank_details,account_number,'.$id,
-            'bank_code' => 'sometimes|required|string',
-            'branch_code' => 'sometimes|required|string',
             'security_id' => [
                 'required',
                 'string',
