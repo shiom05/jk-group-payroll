@@ -1,201 +1,177 @@
-import Layout from '@/layouts/Layout';
-import { useState } from 'react';
-import { router } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { useForm } from '@inertiajs/react';
+import { saveInventory } from '@/services/security-managment.service';
 
-const CreateInventory = () => {
-    const [formData, setFormData] = useState({
-        id: '',
-        item_name: '',
-        sku: '',
-        category: '',
-        description: '',
-        quantity: '',
-        reorder_level: '',
-        unit_price: '',
-        location: '',
-        status: 'available',
-        created_at: '',
-        updated_at: ''
+const CreateInventory = ({ types, handleBack }: { types: any, handleBack: ()=> void}) => {
+    const [selectedType, setSelectedType] = useState<any>(null);
+    const { data, setData, post, processing, errors } = useForm({
+        inventory_type_id: '',
+        size: '',
+        quantity: 1,
+        purchase_price: '',
+        purchase_date: new Date().toISOString().split('T')[0]
     });
 
-    const handleChange = (e: any) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+    const handleTypeChange = (e: any) => {
+        const typeId = e.target.value;
+        const type = types.find((t:any) => t.id == typeId);
+        setSelectedType(type);
+        setData({
+            ...data,
+            inventory_type_id: typeId,
+            size: '',
+            purchase_price: type?.standard_price || ''
+        });
     };
 
-    const handleSubmit = (e: any) => {
+    const handleSubmit = async(e: any) => {
         e.preventDefault();
-        console.log(formData);
-        // Add your axios post here later
+        console.log(data);
+        const result = await saveInventory(data);
+        console.log(result);
+        handleBack();
+        // post(route('inventory.items.store'));
+    };
+
+    const generateSizes = (range: string) => {
+        if (!range) return [];
+        const [start, end] = range.split('-').map(Number);
+        if (isNaN(start) || isNaN(end)) return [];
+        const sizes = [];
+        for (let i = start; i <= end; i++) {
+            sizes.push(i.toString());
+        }
+        return sizes;
     };
 
     return (
-        <Layout>
-            <div className='pt-20 pb-20'>
-                <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-4 rounded-lg bg-white p-6 py-10 shadow-lg">
-                    <h2 className="mb-4 text-2xl font-semibold text-gray-700">Inventory Management Form</h2>
+        // <Layout>
+            <div className="py-12">
+                <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <h2 className="text-2xl font-semibold mb-6">Add Inventory Item</h2>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Item Type
+                                    </label>
+                                    <select
+                                        value={data.inventory_type_id}
+                                        onChange={handleTypeChange}
+                                        className="w-full rounded-md border p-2 shadow-sm"
+                                        required
+                                    >
+                                        <option value="">Select Type</option>
+                                        {types.map((type: any) => (
+                                            <option key={type.id} value={type.id}>
+                                                {type.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.inventory_type_id && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.inventory_type_id}</p>
+                                    )}
+                                </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Inventory ID</label>
-                            <input
-                                type="text"
-                                name="id"
-                                value={formData.id}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
+                                {selectedType?.track_size && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Size
+                                        </label>
+                                        <select
+                                            value={data.size}
+                                            onChange={(e) => setData('size', e.target.value)}
+                                            className="w-full rounded-md border p-2 shadow-sm"
+                                            required
+                                        >
+                                            <option value="">Select Size</option>
+                                            {generateSizes(selectedType.size_range).map((size: any) => (
+                                                <option key={size} value={size}>
+                                                    {size}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.size && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.size}</p>
+                                        )}
+                                    </div>
+                                )}
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Item Name</label>
-                            <input
-                                type="text"
-                                name="item_name"
-                                value={formData.item_name}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Quantity
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={data.quantity}
+                                        onChange={(e: any) => setData('quantity', e.target.value)}
+                                        className="w-full rounded-md border p-2 shadow-sm"
+                                        required
+                                    />
+                                    {errors.quantity && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.quantity}</p>
+                                    )}
+                                </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">SKU</label>
-                            <input
-                                type="text"
-                                name="sku"
-                                value={formData.sku}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Purchase Price
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={data.purchase_price}
+                                        onChange={(e) => setData('purchase_price', e.target.value)}
+                                        className="w-full rounded-md border p-2 shadow-sm"
+                                        required
+                                    />
+                                    {errors.purchase_price && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.purchase_price}</p>
+                                    )}
+                                </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Category</label>
-                            <input
-                                type="text"
-                                name="category"
-                                value={formData.category}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Purchase Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={data.purchase_date}
+                                        onChange={(e) => setData('purchase_date', e.target.value)}
+                                        className="w-full rounded-md border p-2 shadow-sm"
+                                        required
+                                    />
+                                    {errors.purchase_date && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.purchase_date}</p>
+                                    )}
+                                </div>
+                            </div>
 
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Description</label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                            <input
-                                type="number"
-                                name="quantity"
-                                value={formData.quantity}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Reorder Level</label>
-                            <input
-                                type="number"
-                                name="reorder_level"
-                                value={formData.reorder_level}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Unit Price</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                name="unit_price"
-                                value={formData.unit_price}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Location</label>
-                            <input
-                                type="text"
-                                name="location"
-                                value={formData.location}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Status</label>
-                            <select
-                                name="status"
-                                value={formData.status}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            >
-                                <option value="available">Available</option>
-                                <option value="low-stock">Low Stock</option>
-                                <option value="out-of-stock">Out of Stock</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Created At</label>
-                            <input
-                                type="datetime-local"
-                                name="created_at"
-                                value={formData.created_at}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Updated At</label>
-                            <input
-                                type="datetime-local"
-                                name="updated_at"
-                                value={formData.updated_at}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm"
-                            />
-                        </div>
+                            <div className="flex justify-end space-x-4 mt-8">
+                                <button
+                                    type="button"
+                                    onClick={handleBack}
+                                    className="rounded-md bg-gray-200 px-4 py-2 text-gray-800 shadow-md transition hover:bg-gray-300"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="rounded-md bg-blue-600 px-4 py-2 text-white shadow-md transition hover:bg-blue-700"
+                                >
+                                    {processing ? 'Saving...' : 'Save Item'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4 mt-6">
-                        <button
-                            type="button"
-                            onClick={() => router.get('/inventory-management')}
-                            className="rounded-md bg-red-600 px-4 py-2 text-white shadow-md transition hover:bg-red-700"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="rounded-md bg-blue-600 px-4 py-2 text-white shadow-md transition hover:bg-blue-700"
-                        >
-                            Save
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
-        </Layout>
+        // </Layout>
     );
 };
 

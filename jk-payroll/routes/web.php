@@ -26,9 +26,11 @@ Route::get('/security-management/create-security', function () {
 Route::get('/inventory-management', function () {
     return Inertia::render('InventoryManagment/index');
 })->name('InventoryManagment');
-Route::get('/inventory-management/create-inventory', function () {
-    return Inertia::render('InventoryManagment/CreateInventory');
-})->name('CreateInventory');
+
+
+// Route::get('/inventory-management/create-inventory', function () {
+//     return Inertia::render('InventoryManagment/CreateInventory');
+// })->name('CreateInventory');
 
 
 Route::get('/leave-management', function () {

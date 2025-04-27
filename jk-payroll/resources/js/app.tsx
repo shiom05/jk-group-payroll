@@ -24,7 +24,7 @@ createInertiaApp({
 //npm run install
 //npm run build
 //composer run dev
-//php artisan make:model {model name} -a 
+//php artisan make:model InventoryItems  -a 
 //php artisan route:list
 
 ///php artisan make:model LeaveBalance -a 

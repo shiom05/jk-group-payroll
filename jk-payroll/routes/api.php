@@ -5,6 +5,9 @@ use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\BankDetailController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LeaveBalanceController;
+use App\Http\Controllers\InventoryTypeController;
+use App\Http\Controllers\InventoryItemsController;
+use App\Http\Controllers\InventoryTransactionController;
 
 Route::apiResource('api/securities', SecurityController::class)->withoutMiddleware(['auth:api']);
 // Route::apiResource('api/bank-details', BankDetailController::class)->withoutMiddleware(['auth:api']);
@@ -30,5 +33,23 @@ Route::prefix('api/security-leave-balances')->group(function () {
     Route::get('/security/{securityId}', [LeaveBalanceController::class, 'getLeaveBalanceBySecurity']);
     Route::post('/', [LeaveBalanceController::class, 'store']);
 });
+
+
+Route::prefix('api/inventory')->group(function () {
+    Route::get('/types', [InventoryTypeController::class, 'index']);
+    Route::post('/', [InventoryItemsController::class, 'store']);
+    Route::get('/', [InventoryItemsController::class, 'index']);
+    Route::put('/{item}', [InventoryItemsController::class, 'update']);
+    Route::post('/allocate', [InventoryTransactionController::class, 'store']);
+    Route::post('/return', [InventoryTransactionController::class, 'return']);
+    Route::get('/allocations', [InventoryTransactionController::class, 'allAllocatedInventories']);
+    Route::get('/allocations/{securityId}', [InventoryTransactionController::class, 'allocatedInventoriesBySecurity']);
+    //need to get allocated items for a security
+    Route::get('/allocations/current-month', [InventoryTransactionController::class, 'allocatedInventoriesForCurrentMonth']);
+    Route::get('/allocations/current-month/{securityId}', [InventoryTransactionController::class, 'allocatedInventoriesForSecurityCurrentMonth']);
+
+});
+
+
 
 
