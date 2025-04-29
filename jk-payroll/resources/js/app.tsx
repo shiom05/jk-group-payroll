@@ -27,7 +27,7 @@ createInertiaApp({
 //php artisan make:model InventoryItems  -a 
 //php artisan route:list
 
-///php artisan make:model LeaveBalance -a 
+///php artisan make:model SecurityAsset -a 
 
 
 // php artisan storage:link -> run in prod

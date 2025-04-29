@@ -9,6 +9,7 @@ import type { ColumnsType } from 'antd/es/table';
 import EditInventory from './EditInventory';
 import AllocationForm from './AllocationForm';
 import Security from '@/types/jk/security';
+import ReturnForm from './ReturnForm';
 
 interface InventoryItem {
     id: number;
@@ -51,6 +52,9 @@ const InventoryManagement = () => {
         const result = await fetchSecurities();
         setSecurities(result.data)
     }
+
+
+   
  
     useEffect(()=>{
         getInventoryTypes();
@@ -275,7 +279,9 @@ const InventoryManagement = () => {
                 />
             )}
 
-            < AllocationForm employees={securities} inventoryItems={inventories} />
+            {/* < AllocationForm employees={securities} inventoryItems={inventories} /> */}
+
+            <ReturnForm employees={securities} />
         </Layout>
     );
 };

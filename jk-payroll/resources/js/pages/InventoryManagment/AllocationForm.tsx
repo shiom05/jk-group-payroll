@@ -5,7 +5,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { UserOutlined, ShoppingOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import Security from '@/types/jk/security';
-import { allocateInventory } from '@/services/security-managment.service';
+import { allocateInventory, saveAsset } from '@/services/security-managment.service';
 
 interface InventoryType {
   id: number;
@@ -55,14 +55,25 @@ const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryIte
 
   const handleSubmit = async () => {
     console.log(data);
+
     const result = await allocateInventory(data);
     console.log(result.data);
-    // post('/api/inventory/allocate', {
-    //   onSuccess: () => {
-    //     setSelectedItems([]);
-    //     onSuccess?.();
-    //   }
-    // });
+
+    if(result.data){
+      const assetSaveReq = {
+        "security_id": data.security_id,
+        "items": data.items.map((itm: any)=> {
+          return {
+            inventory_item_id: itm.id,
+            quantity: itm.quantity
+          }
+        })
+      }
+      const res = await saveAsset(assetSaveReq);
+      console.log(res.data);
+    }
+   
+
   };
 
   const addItem = () => {

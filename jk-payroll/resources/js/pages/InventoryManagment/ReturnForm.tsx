@@ -1,244 +1,291 @@
-// import React, { useState } from 'react';
-// import { useForm } from '@inertiajs/react';
-// import { Table, Tag, Select, Button, DatePicker, Form, InputNumber, Space, Card } from 'antd';
-// import type { ColumnsType } from 'antd/es/table';
-// import { UserOutlined, UndoOutlined } from '@ant-design/icons';
-// interface InventoryType {
-//     id: number;
-//     name: string;
-//   }
-  
+import React, { useEffect, useState } from 'react';
+import { useForm } from '@inertiajs/react';
+import {
+  Table, Tag, Select, Button, DatePicker, Form, InputNumber, Card, Input
+} from 'antd';
+import { ColumnsType } from 'antd/es/table';
+import { UndoOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import Security from '@/types/jk/security';
+import { getAsset, returnAsset, returnInventory } from '@/services/security-managment.service';
 
-// interface InventoryItem {
-//     id: number;
-//     inventory_type_id: number;
-//     inventory_type: InventoryType;
-//     size: string | null;
-//     condition: 'new' | 'returned';
-//     quantity: number;
-//     purchase_price: number;
-//     purchase_date: string;
-//     last_restocked_at: string | null;
-//     is_available: boolean;
-// }
+// Interfaces
+export interface InventoryType {
+  id: number;
+  name: string;
+  code: string;
+  track_size: boolean;
+  size_range: string;
+  standard_price: number;
+}
 
-// interface ReturnFormProps {
-//   employees: { id: number; name: string }[];
-//   inventoryItems: InventoryItem[];
-//   transactions: any[];
-//   onSuccess?: () => void;
-// }
+export interface InventoryItem {
+  id: number;
+  inventory_type_id: number;
+  inventory_type: InventoryType;
+  size: string | null;
+  condition: 'new' | 'returned';
+  quantity: number;
+  purchase_price: number;
+  purchase_date: string;
+  last_restocked_at: string | null;
+  is_available: boolean;
+}
 
-// const ReturnForm: React.FC<ReturnFormProps> = ({ employees, inventoryItems, transactions, onSuccess }) => {
-//   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
-//   const [selectedItems, setSelectedItems] = useState<{id: number; quantity: number}[]>([]);
-//   const { data, setData, post, processing } = useForm({
-//     employee_id: '',
-//     items: [],
-//     transaction_date: new Date().toISOString().split('T')[0],
-//     original_transaction_id: null
-//   });
+interface AllocationItem {
+  id: number;
+  inventory_item_id: number;
+  quantity: number;
+  inventory_item: InventoryItem;
+  removeQuantity: number;
+}
 
-//   const handleSubmit = async () => {
-//     post('/api/inventory/transactions/return', {
-//       onSuccess: () => {
-//         setSelectedItems([]);
-//         setSelectedTransaction(null);
-//         onSuccess?.();
-//       }
-//     });
-//   };
+interface ReturnFormProps {
+  employees: Security[];
+  onSuccess?: () => void;
+}
 
-//   const columns: ColumnsType<any> = [
-//     {
-//       title: 'Item',
-//       dataIndex: 'id',
-//       render: (id) => {
-//         const item = inventoryItems.find(i => i.id === id);
-//         return `${item?.inventory_type.name}${item?.size ? ` (${item.size})` : ''}`;
-//       }
-//     },
-//     {
-//       title: 'Condition',
-//       dataIndex: 'condition',
-//       render: (condition) => (
-//         <Tag color={condition === 'new' ? 'green' : 'orange'}>
-//           {condition.toUpperCase()}
-//         </Tag>
-//       )
-//     },
-//     {
-//       title: 'Quantity',
-//       dataIndex: 'quantity'
-//     },
-//     {
-//       title: 'Action',
-//       render: (_, record, index) => (
-//         <Button danger onClick={() => {
-//           const newItems = [...selectedItems];
-//           newItems.splice(index, 1);
-//           setSelectedItems(newItems);
-//           setData('items', newItems);
-//         }}>
-//           Remove
-//         </Button>
-//       )
-//     }
-//   ];
+const ReturnForm: React.FC<ReturnFormProps> = ({
+  employees,
+  onSuccess
+}) => {
+  const [selectedItems, setSelectedItems] = useState<AllocationItem[]>([]);
+  const [selectedSecurityId, setSelectedSecurityId] = useState<number | null>(null);
+  const [allocatedInventory, setAllocatedInventory] = useState<AllocationItem[]>([]);
 
-//   return (
-//     <Card title={<><UndoOutlined /> Return Inventory</>}>
-//       <Form layout="vertical" onFinish={handleSubmit}>
-//         <Form.Item label="Original Allocation (Optional)">
-//           <Select
-//             placeholder="Select original transaction"
-//             options={transactions.map(t => ({
-//               value: t.id,
-//               label: `#${t.id} - ${t.employee.name} - ${new Date(t.created_at).toLocaleDateString()}`
-//             }))}
-//             onChange={value => {
-//               const transaction = transactions.find(t => t.id === value);
-//               setSelectedTransaction(transaction);
-//               setData('original_transaction_id', value);
-//               setData('employee_id', transaction.employee_id);
-//             }}
-//             allowClear
-//           />
-//         </Form.Item>
+  const { data, setData, post, processing } = useForm<any>({
+    security_id: '',
+    items: [] as AllocationItem[],
+    transaction_date: new Date().toISOString().split('T')[0],
+    notes: ''
+  });
 
-//         <Form.Item label="Security Officer" required>
-//           <Select
-//             value={data.employee_id}
-//             onChange={value => setData('employee_id', value)}
-//             options={employees.map(e => ({ value: e.id, label: e.name }))}
-//             placeholder="Select security officer"
-//             disabled={!!selectedTransaction}
-//           />
-//         </Form.Item>
+  const handleSubmit = async () => {
+      const itemMap = data.items.map((itm: AllocationItem) => ({
+          id: itm.id,
+          quantity: itm.removeQuantity,
+      }));
 
-//         <Form.Item label="Return Date" required>
-//           <DatePicker
-//             value={data.transaction_date ? dayjs(data.transaction_date) : null}
-//             onChange={date => setData('transaction_date', date?.format('YYYY-MM-DD'))}
-//             style={{ width: '100%' }}
-//           />
-//         </Form.Item>
+      const returndata = {
+          ...data,
+          items: itemMap,
+      };
 
-//         {selectedTransaction && (
-//           <Form.Item label="Items to Return">
-//             <Table
-//               columns={[
-//                 { title: 'Item', dataIndex: ['inventory_item', 'type', 'name'] },
-//                 { title: 'Size', dataIndex: ['inventory_item', 'size'] },
-//                 { 
-//                   title: 'Condition', 
-//                   dataIndex: 'condition',
-//                   render: (condition) => (
-//                     <Tag color={condition === 'new' ? 'green' : 'orange'}>
-//                       {condition.toUpperCase()}
-//                     </Tag>
-//                   )
-//                 },
-//                 { title: 'Allocated Qty', dataIndex: 'quantity' },
-//                 {
-//                   title: 'Return Qty',
-//                   render: (_, record, index) => (
-//                     <InputNumber 
-//                       min={1} 
-//                       max={record.quantity} 
-//                       defaultValue={record.quantity}
-//                       onChange={value => {
-//                         const items = [...selectedItems];
-//                         const existingIndex = items.findIndex(i => i.id === record.inventory_item_id);
-                        
-//                         if (existingIndex >= 0) {
-//                           items[existingIndex].quantity = value || 1;
-//                         } else {
-//                           items.push({
-//                             id: record.inventory_item_id,
-//                             quantity: value || 1
-//                           });
-//                         }
-                        
-//                         setSelectedItems(items);
-//                         setData('items', items);
-//                       }}
-//                     />
-//                   )
-//                 }
-//               ]}
-//               dataSource={selectedTransaction.items}
-//               rowKey="id"
-//               pagination={false}
-//             />
-//           </Form.Item>
-//         )}
+      const assetRemoveReq = {
+          security_id: data.security_id,
+          items: data.items.map((itm: any) => {
+              return {
+                  inventory_item_id: itm.id,
+                  quantity: itm.removeQuantity,
+              };
+          }),
+      };
 
-//         {!selectedTransaction && (
-//           <Form.Item label="Add Returned Items">
-//             <Space.Compact style={{ width: '100%' }}>
-//               <Select
-//                 style={{ width: '60%' }}
-//                 placeholder="Select item"
-//                 options={inventoryItems.map(i => ({
-//                   value: i.id,
-//                   label: `${i.type.name}${i.size ? ` (${i.size})` : ''}`
-//                 }))}
-//               />
-//               <InputNumber 
-//                 style={{ width: '20%' }} 
-//                 min={1} 
-//                 placeholder="Qty" 
-//               />
-//               <Button 
-//                 type="primary" 
-//                 icon={<UserOutlined />}
-//                 onClick={() => {
-//                   // Implement add logic
-//                 }}
-//               >
-//                 Add
-//               </Button>
-//             </Space.Compact>
-//           </Form.Item>
-//         )}
+      console.log('Return data:', returndata);
+      console.log('assetRemoveReq', assetRemoveReq);
 
-//         {selectedItems.length > 0 && (
-//           <>
-//             <Table
-//               columns={columns}
-//               dataSource={selectedItems.map(item => {
-//                 const inventoryItem = inventoryItems.find(i => i.id === item.id);
-//                 return {
-//                   ...item,
-//                   condition: inventoryItem?.condition
-//                 };
-//               })}
-//               rowKey="id"
-//               pagination={false}
-//               size="small"
-//             />
-//             <div style={{ marginTop: 16, textAlign: 'right' }}>
-//               <span style={{ marginRight: 16 }}>
-//                 <strong>Total Items:</strong> {selectedItems.reduce((sum, item) => sum + item.quantity, 0)}
-//               </span>
-//             </div>
-//           </>
-//         )}
+      const result = await returnInventory(returndata);
+      if (result.data && result.data.transaction_id) {
+          const res = await returnAsset(assetRemoveReq);
+          console.log(res);
+          location.reload();
+      }
+  };
 
-//         <Form.Item style={{ marginTop: 24 }}>
-//           <Button 
-//             type="primary" 
-//             htmlType="submit" 
-//             loading={processing}
-//             disabled={!data.employee_id || selectedItems.length === 0}
-//           >
-//             Process Return
-//           </Button>
-//         </Form.Item>
-//       </Form>
-//     </Card>
-//   );
-// };
+  const fetchInventoryAllocationsforSecurityId = async () => {
+    const result = await getAsset(selectedSecurityId);
+    if (result && result.data && result.data.data) {
+      const list: AllocationItem[] = result.data.data.map((item: any) => ({
+        ...item,
+        inventory_item: item.inventory_item,
+        removeQuantity: 1
+      }));
+      setAllocatedInventory(list);
+    }
+  };
 
-// export default ReturnForm;
+  useEffect(() => {
+    if (selectedSecurityId) {
+      fetchInventoryAllocationsforSecurityId();
+    }
+  }, [selectedSecurityId]);
+
+  return (
+    <Card title={<><UndoOutlined /> Return Inventory</>}>
+      <Form layout="vertical" onFinish={handleSubmit}>
+        <Form.Item label="Security Officer" required>
+          <Select
+            value={data.security_id}
+            onChange={(value) => {
+              setData('security_id', value);
+              setSelectedSecurityId(value);
+              setSelectedItems([]);
+              setAllocatedInventory([]);
+            }}
+            options={employees.map((e: Security) => ({
+              value: e.securityId,
+              label: e.securityName
+            }))}
+            placeholder="Select security officer"
+          />
+        </Form.Item>
+
+        {selectedSecurityId && allocatedInventory.length > 0 && (
+          <>
+            <Form.Item label="Items to Return" required>
+              <Table
+                columns={[
+                  {
+                    title: 'Allocation ID #',
+                    render: (item: AllocationItem) => `#${item.id}`
+                  },
+                  {
+                    title: 'Item',
+                    render: (item: AllocationItem) => item.inventory_item.inventory_type.name
+                  },
+                  {
+                    title: 'Size',
+                    render: (item: AllocationItem) =>
+                      item.inventory_item.inventory_type.track_size ? item.inventory_item.size : 'N/A'
+                  },
+                  {
+                    title: 'Condition',
+                    render: (item: AllocationItem) => (
+                      <Tag color={item.inventory_item.condition === 'new' ? 'green' : 'orange'}>
+                        {item.inventory_item.condition.toUpperCase()}
+                      </Tag>
+                    )
+                  },
+                  {
+                    title: 'Allocated Qty',
+                    dataIndex: 'quantity'
+                  },
+                  {
+                    title: 'Action',
+                    render: (item: AllocationItem) => {
+                      const isSelected = selectedItems.some(i => i.id === item.id);
+                      return (
+                        <Button
+                          type={isSelected ? 'default' : 'primary'}
+                          icon={<UndoOutlined />}
+                          onClick={() => {
+                            const newItems = [...selectedItems];
+                            const existingIndex = newItems.findIndex(i => i.id === item.id);
+
+                            if (existingIndex >= 0) {
+                              newItems.splice(existingIndex, 1);
+                            } else {
+                              newItems.push({ ...item, removeQuantity: 1 });
+                            }
+
+                            setSelectedItems(newItems);
+                            setData('items', newItems);
+                          }}
+                        >
+                          {isSelected ? 'Remove' : 'Select'}
+                        </Button>
+                      );
+                    }
+                  }
+                ]}
+                dataSource={allocatedInventory}
+                rowKey={(record) => `${record.id}-${record.inventory_item_id}`}
+                pagination={false}
+                size="small"
+              />
+            </Form.Item>
+
+            <Form.Item label="Return Date" required>
+              <DatePicker
+                value={data.transaction_date ? dayjs(data.transaction_date) : null}
+                onChange={(date) =>
+                  setData('transaction_date', date?.format('YYYY-MM-DD') || '')
+                }
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+
+            <Form.Item label="Notes">
+              <Input.TextArea
+                value={data.notes}
+                onChange={(e) => setData('notes', e.target.value)}
+                placeholder="Optional notes about this return"
+              />
+            </Form.Item>
+          </>
+        )}
+
+        {selectedItems.length > 0 && (
+          <Form.Item label="Items Selected">
+            <Table
+              columns={[
+                {
+                  title: 'Item',
+                  render: (_, record: AllocationItem) =>
+                    `${record.inventory_item.inventory_type.name}${record.inventory_item.size ? ` (${record.inventory_item.size})` : ''}`
+                },
+                {
+                  title: 'Condition',
+                  render: (record: AllocationItem) => (
+                    <Tag color={record.inventory_item.condition === 'new' ? 'green' : 'orange'}>
+                      {record.inventory_item.condition.toUpperCase()}
+                    </Tag>
+                  )
+                },
+                {
+                  title: 'Allocated Qty',
+                  dataIndex: 'quantity'
+                },
+                {
+                  title: 'Return Qty',
+                  render: (_, record: AllocationItem) => (
+                    <InputNumber
+                      min={1}
+                      max={record.quantity}
+                      value={record.removeQuantity}
+                      onChange={(value) => {
+                        const items = [...selectedItems];
+                        const index = items.findIndex(i => i.id === record.id);
+                        if (index >= 0 && value) {
+                          items[index].removeQuantity = Math.min(value, record.quantity);
+                          setSelectedItems(items);
+                          setData('items', items);
+                        }
+                      }}
+                    />
+                  )
+                }
+              ]}
+              dataSource={selectedItems}
+              rowKey="id"
+              pagination={false}
+            />
+          </Form.Item>
+        )}
+
+        <div style={{ marginTop: 16, textAlign: 'right' }}>
+          <span style={{ marginRight: 16 }}>
+            <strong>Items Selected:</strong> {selectedItems.length}
+          </span>
+          <span>
+            <strong>Total Qty:</strong>{' '}
+            {selectedItems.reduce((sum, item) => sum + item.removeQuantity, 0)}
+          </span>
+        </div>
+
+        <Form.Item style={{ marginTop: 24 }}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={processing}
+            disabled={!data.security_id || selectedItems.length === 0}
+          >
+            Process Return
+          </Button>
+        </Form.Item>
+      </Form>
+    </Card>
+  );
+};
+
+export default ReturnForm;

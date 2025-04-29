@@ -29,3 +29,21 @@ export const editInventoryitems = (id: any, data: any)=>{
 export const allocateInventory = (data: any)=> {
     return axios.post('/api/inventory/allocate', data); 
 }
+export const returnInventory = (data: any)=> {
+    return axios.post('/api/inventory/return', data); 
+}
+
+export const saveAsset = (data: any)=> {
+    return axios.post('/api/inventory/asign-asset', data); 
+}
+export const returnAsset = (data: any)=> {
+    return axios.post('/api/inventory/return-asset', data); 
+}
+
+export const getAsset = (securityId: any)=>{
+    return axios.get(`/api/inventory/security/${securityId}`); 
+}
+
+export const getAllocatedInventoriesForSecuriy = (securityId:any)=>{
+    return axios.get(`/api/inventory/allocations/${securityId}`)
+}

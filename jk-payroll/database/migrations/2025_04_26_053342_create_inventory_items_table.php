@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('inventory_items', function (Blueprint $table) {
-            //there will be x number of records of the same type of each and suplicate with new and returned
+            //there will be x number of records of the same type of each and duplicate with new and returned
             //When returned create a new record with type returned and keep incrementing that when security return the same 
-             
+
             $table->id();
             $table->foreignId('inventory_type_id')->constrained();
             $table->string('size')->nullable();
