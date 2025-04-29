@@ -43,11 +43,13 @@ interface AllocationItem {
 interface ReturnFormProps {
   employees: Security[];
   onSuccess?: () => void;
+  onCancel: () => void;
 }
 
 const ReturnForm: React.FC<ReturnFormProps> = ({
   employees,
-  onSuccess
+  onSuccess,
+  onCancel
 }) => {
   const [selectedItems, setSelectedItems] = useState<AllocationItem[]>([]);
   const [selectedSecurityId, setSelectedSecurityId] = useState<number | null>(null);
@@ -111,180 +113,183 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
   }, [selectedSecurityId]);
 
   return (
-    <Card title={<><UndoOutlined /> Return Inventory</>}>
-      <Form layout="vertical" onFinish={handleSubmit}>
-        <Form.Item label="Security Officer" required>
-          <Select
-            value={data.security_id}
-            onChange={(value) => {
-              setData('security_id', value);
-              setSelectedSecurityId(value);
-              setSelectedItems([]);
-              setAllocatedInventory([]);
-            }}
-            options={employees.map((e: Security) => ({
-              value: e.securityId,
-              label: e.securityName
-            }))}
-            placeholder="Select security officer"
-          />
-        </Form.Item>
-
-        {selectedSecurityId && allocatedInventory.length > 0 && (
-          <>
-            <Form.Item label="Items to Return" required>
-              <Table
-                columns={[
-                  {
-                    title: 'Allocation ID #',
-                    render: (item: AllocationItem) => `#${item.id}`
-                  },
-                  {
-                    title: 'Item',
-                    render: (item: AllocationItem) => item.inventory_item.inventory_type.name
-                  },
-                  {
-                    title: 'Size',
-                    render: (item: AllocationItem) =>
-                      item.inventory_item.inventory_type.track_size ? item.inventory_item.size : 'N/A'
-                  },
-                  {
-                    title: 'Condition',
-                    render: (item: AllocationItem) => (
-                      <Tag color={item.inventory_item.condition === 'new' ? 'green' : 'orange'}>
-                        {item.inventory_item.condition.toUpperCase()}
-                      </Tag>
-                    )
-                  },
-                  {
-                    title: 'Allocated Qty',
-                    dataIndex: 'quantity'
-                  },
-                  {
-                    title: 'Action',
-                    render: (item: AllocationItem) => {
-                      const isSelected = selectedItems.some(i => i.id === item.id);
-                      return (
-                        <Button
-                          type={isSelected ? 'default' : 'primary'}
-                          icon={<UndoOutlined />}
-                          onClick={() => {
-                            const newItems = [...selectedItems];
-                            const existingIndex = newItems.findIndex(i => i.id === item.id);
-
-                            if (existingIndex >= 0) {
-                              newItems.splice(existingIndex, 1);
-                            } else {
-                              newItems.push({ ...item, removeQuantity: 1 });
-                            }
-
-                            setSelectedItems(newItems);
-                            setData('items', newItems);
-                          }}
-                        >
-                          {isSelected ? 'Remove' : 'Select'}
-                        </Button>
-                      );
-                    }
-                  }
-                ]}
-                dataSource={allocatedInventory}
-                rowKey={(record) => `${record.id}-${record.inventory_item_id}`}
-                pagination={false}
-                size="small"
-              />
-            </Form.Item>
-
-            <Form.Item label="Return Date" required>
-              <DatePicker
-                value={data.transaction_date ? dayjs(data.transaction_date) : null}
-                onChange={(date) =>
-                  setData('transaction_date', date?.format('YYYY-MM-DD') || '')
-                }
-                style={{ width: '100%' }}
-              />
-            </Form.Item>
-
-            <Form.Item label="Notes">
-              <Input.TextArea
-                value={data.notes}
-                onChange={(e) => setData('notes', e.target.value)}
-                placeholder="Optional notes about this return"
-              />
-            </Form.Item>
-          </>
-        )}
-
-        {selectedItems.length > 0 && (
-          <Form.Item label="Items Selected">
-            <Table
-              columns={[
-                {
-                  title: 'Item',
-                  render: (_, record: AllocationItem) =>
-                    `${record.inventory_item.inventory_type.name}${record.inventory_item.size ? ` (${record.inventory_item.size})` : ''}`
-                },
-                {
-                  title: 'Condition',
-                  render: (record: AllocationItem) => (
-                    <Tag color={record.inventory_item.condition === 'new' ? 'green' : 'orange'}>
-                      {record.inventory_item.condition.toUpperCase()}
-                    </Tag>
-                  )
-                },
-                {
-                  title: 'Allocated Qty',
-                  dataIndex: 'quantity'
-                },
-                {
-                  title: 'Return Qty',
-                  render: (_, record: AllocationItem) => (
-                    <InputNumber
-                      min={1}
-                      max={record.quantity}
-                      value={record.removeQuantity}
+      <Card
+          title={
+              <>
+                  <UndoOutlined /> Return Inventory
+              </>
+          }
+      >
+          <Form layout="vertical" onFinish={handleSubmit}>
+              <Form.Item label="Security Officer" required>
+                  <Select
+                      value={data.security_id}
                       onChange={(value) => {
-                        const items = [...selectedItems];
-                        const index = items.findIndex(i => i.id === record.id);
-                        if (index >= 0 && value) {
-                          items[index].removeQuantity = Math.min(value, record.quantity);
-                          setSelectedItems(items);
-                          setData('items', items);
-                        }
+                          setData('security_id', value);
+                          setSelectedSecurityId(value);
+                          setSelectedItems([]);
+                          setAllocatedInventory([]);
                       }}
-                    />
-                  )
-                }
-              ]}
-              dataSource={selectedItems}
-              rowKey="id"
-              pagination={false}
-            />
-          </Form.Item>
-        )}
+                      options={employees.map((e: Security) => ({
+                          value: e.securityId,
+                          label: e.securityName,
+                      }))}
+                      placeholder="Select security officer"
+                  />
+              </Form.Item>
 
-        <div style={{ marginTop: 16, textAlign: 'right' }}>
-          <span style={{ marginRight: 16 }}>
-            <strong>Items Selected:</strong> {selectedItems.length}
-          </span>
-          <span>
-            <strong>Total Qty:</strong>{' '}
-            {selectedItems.reduce((sum, item) => sum + item.removeQuantity, 0)}
-          </span>
-        </div>
+              {selectedSecurityId && allocatedInventory.length > 0 && (
+                  <>
+                      <Form.Item label="Items to Return" required>
+                          <Table
+                              columns={[
+                                  {
+                                      title: 'Allocation ID #',
+                                      render: (item: AllocationItem) => `#${item.id}`,
+                                  },
+                                  {
+                                      title: 'Item',
+                                      render: (item: AllocationItem) => item.inventory_item.inventory_type.name,
+                                  },
+                                  {
+                                      title: 'Size',
+                                      render: (item: AllocationItem) =>
+                                          item.inventory_item.inventory_type.track_size ? item.inventory_item.size : 'N/A',
+                                  },
+                                  {
+                                      title: 'Condition',
+                                      render: (item: AllocationItem) => (
+                                          <Tag color={item.inventory_item.condition === 'new' ? 'green' : 'orange'}>
+                                              {item.inventory_item.condition.toUpperCase()}
+                                          </Tag>
+                                      ),
+                                  },
+                                  {
+                                      title: 'Allocated Qty',
+                                      dataIndex: 'quantity',
+                                  },
+                                  {
+                                      title: 'Action',
+                                      render: (item: AllocationItem) => {
+                                          const isSelected = selectedItems.some((i) => i.id === item.id);
+                                          return (
+                                              <Button
+                                                  type={isSelected ? 'default' : 'primary'}
+                                                  icon={<UndoOutlined />}
+                                                  onClick={() => {
+                                                      const newItems = [...selectedItems];
+                                                      const existingIndex = newItems.findIndex((i) => i.id === item.id);
 
-        <Form.Item style={{ marginTop: 24 }}>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={processing}
-            disabled={!data.security_id || selectedItems.length === 0}
-          >
-            Process Return
-          </Button>
-        </Form.Item>
-      </Form>
-    </Card>
+                                                      if (existingIndex >= 0) {
+                                                          newItems.splice(existingIndex, 1);
+                                                      } else {
+                                                          newItems.push({ ...item, removeQuantity: 1 });
+                                                      }
+
+                                                      setSelectedItems(newItems);
+                                                      setData('items', newItems);
+                                                  }}
+                                              >
+                                                  {isSelected ? 'Remove' : 'Select'}
+                                              </Button>
+                                          );
+                                      },
+                                  },
+                              ]}
+                              dataSource={allocatedInventory}
+                              rowKey={(record) => `${record.id}-${record.inventory_item_id}`}
+                              pagination={false}
+                              size="small"
+                          />
+                      </Form.Item>
+
+                      <Form.Item label="Return Date" required>
+                          <DatePicker
+                              value={data.transaction_date ? dayjs(data.transaction_date) : null}
+                              onChange={(date) => setData('transaction_date', date?.format('YYYY-MM-DD') || '')}
+                              style={{ width: '100%' }}
+                          />
+                      </Form.Item>
+
+                      <Form.Item label="Notes">
+                          <Input.TextArea
+                              value={data.notes}
+                              onChange={(e) => setData('notes', e.target.value)}
+                              placeholder="Optional notes about this return"
+                          />
+                      </Form.Item>
+                  </>
+              )}
+
+              {selectedItems.length > 0 && (
+                  <Form.Item label="Items Selected">
+                      <Table
+                          columns={[
+                              {
+                                  title: 'Item',
+                                  render: (_, record: AllocationItem) =>
+                                      `${record.inventory_item.inventory_type.name}${record.inventory_item.size ? ` (${record.inventory_item.size})` : ''}`,
+                              },
+                              {
+                                  title: 'Condition',
+                                  render: (record: AllocationItem) => (
+                                      <Tag color={record.inventory_item.condition === 'new' ? 'green' : 'orange'}>
+                                          {record.inventory_item.condition.toUpperCase()}
+                                      </Tag>
+                                  ),
+                              },
+                              {
+                                  title: 'Allocated Qty',
+                                  dataIndex: 'quantity',
+                              },
+                              {
+                                  title: 'Return Qty',
+                                  render: (_, record: AllocationItem) => (
+                                      <InputNumber
+                                          min={1}
+                                          max={record.quantity}
+                                          value={record.removeQuantity}
+                                          onChange={(value) => {
+                                              const items = [...selectedItems];
+                                              const index = items.findIndex((i) => i.id === record.id);
+                                              if (index >= 0 && value) {
+                                                  items[index].removeQuantity = Math.min(value, record.quantity);
+                                                  setSelectedItems(items);
+                                                  setData('items', items);
+                                              }
+                                          }}
+                                      />
+                                  ),
+                              },
+                          ]}
+                          dataSource={selectedItems}
+                          rowKey="id"
+                          pagination={false}
+                      />
+                  </Form.Item>
+              )}
+
+              <div style={{ marginTop: 16, textAlign: 'right' }}>
+                  <span style={{ marginRight: 16 }}>
+                      <strong>Items Selected:</strong> {selectedItems.length}
+                  </span>
+                  <span>
+                      <strong>Total Qty:</strong> {selectedItems.reduce((sum, item) => sum + item.removeQuantity, 0)}
+                  </span>
+              </div>
+
+              <Form.Item style={{ marginTop: 24 }}>
+                  <div className="flex flex-row gap-x-5">
+                  <Button type="primary" htmlType="submit" loading={processing} disabled={!data.security_id || selectedItems.length === 0}>
+                      Process Return
+                  </Button>
+                      <Button type="primary" htmlType="button" className="bg-red-600!" onClick={onCancel}>
+                          Cancel
+                      </Button>
+                  </div>
+              </Form.Item>
+          </Form>
+      </Card>
   );
 };
 

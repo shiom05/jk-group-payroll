@@ -40,9 +40,10 @@ interface AllocationFormProps {
   employees: Security[];
   inventoryItems: InventoryItem[];
   onSuccess?: () => void;
+  onCancel:()=>void
 }
 
-const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryItems, onSuccess }) => {
+const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryItems, onSuccess, onCancel }) => {
   const [selectedItems, setSelectedItems] = useState<AllocationItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
@@ -135,93 +136,84 @@ const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryIte
   ];
 
   return (
-    <Card title={<><ShoppingOutlined /> Allocate Inventory</>}>
-      <Form layout="vertical" onFinish={handleSubmit}>
-        <Form.Item label="Security Officer" required>
-          <Select
-            value={data.security_id}
-            onChange={value => setData('security_id', value)}
-            options={employees.map((e: Security) => ({ value: e.securityId, label: e.securityName }))}
-            placeholder="Select security officer"
-          />
-        </Form.Item>
+      <div className="p-10 pt-0">
+          <Card>
+              <Form layout="vertical" onFinish={handleSubmit}>
+                  <Form.Item label="Security Officer" required>
+                      <Select
+                          value={data.security_id}
+                          onChange={(value) => setData('security_id', value)}
+                          options={employees.map((e: Security) => ({ value: e.securityId, label: e.securityName }))}
+                          placeholder="Select security officer"
+                      />
+                  </Form.Item>
 
-        <Form.Item label="Allocation Date" required>
-          <DatePicker
-            value={data.transaction_date ? dayjs(data.transaction_date) : null}
-            onChange={date => setData('transaction_date', date?.format('YYYY-MM-DD') || '')}
-            style={{ width: '100%' }}
-          />
-        </Form.Item>
+                  <Form.Item label="Allocation Date" required>
+                      <DatePicker
+                          value={data.transaction_date ? dayjs(data.transaction_date) : null}
+                          onChange={(date) => setData('transaction_date', date?.format('YYYY-MM-DD') || '')}
+                          style={{ width: '100%' }}
+                      />
+                  </Form.Item>
 
-        <Form.Item label="Add Items">
-          <Space.Compact style={{ width: '100%' }}>
-            <Select
-              style={{ width: '60%' }}
-              placeholder="Select item"
-              options={inventoryItems
-                .filter(i => i.quantity > 0)
-                .map(i => ({
-                  value: i.id,
-                  label: `${i.inventory_type.name}${i.size ? ` (${i.size})` : ''} - $${i.purchase_price}`
-                }))}
-              value={selectedItemId}
-              onChange={value => setSelectedItemId(value)}
-            />
-            <InputNumber 
-              style={{ width: '20%' }} 
-              min={1} 
-              placeholder="Qty"
-              value={selectedQuantity}
-              onChange={value => setSelectedQuantity(value || 1)}
-            />
-            <Button 
-              type="primary" 
-              icon={<UserOutlined />}
-              onClick={addItem}
-              disabled={!selectedItemId}
-            >
-              Add
-            </Button>
-          </Space.Compact>
-        </Form.Item>
+                  <Form.Item label="Add Items">
+                      <Space.Compact style={{ width: '100%' }}>
+                          <Select
+                              style={{ width: '60%' }}
+                              placeholder="Select item"
+                              options={inventoryItems
+                                  .filter((i) => i.quantity > 0)
+                                  .map((i) => ({
+                                      value: i.id,
+                                      label: `${i.inventory_type.name}${i.size ? ` (${i.size})` : ''} - $${i.purchase_price}`,
+                                  }))}
+                              value={selectedItemId}
+                              onChange={(value) => setSelectedItemId(value)}
+                          />
+                          <InputNumber
+                              style={{ width: '20%' }}
+                              min={1}
+                              placeholder="Qty"
+                              value={selectedQuantity}
+                              onChange={(value) => setSelectedQuantity(value || 1)}
+                          />
+                          <Button type="primary" icon={<UserOutlined />} onClick={addItem} disabled={!selectedItemId}>
+                              Add
+                          </Button>
+                      </Space.Compact>
+                  </Form.Item>
 
-        {selectedItems.length > 0 && (
-          <>
-            <Table
-              columns={columns}
-              dataSource={selectedItems}
-              rowKey="id"
-              pagination={false}
-              size="small"
-            />
-            <div style={{ marginTop: 16, textAlign: 'right' }}>
-              <span style={{ marginRight: 16 }}>
-                <strong>Total Items:</strong> {selectedItems.reduce((sum, item) => sum + item.quantity, 0)}
-              </span>
-              <span>
-                <strong>Total Value:</strong> $
-                {selectedItems.reduce((sum, item) => {
-                  const inventoryItem = inventoryItems.find(i => i.id === item.id);
-                  return sum + (inventoryItem?.purchase_price || 0) * item.quantity;
-                }, 0)}
-              </span>
-            </div>
-          </>
-        )}
+                  {selectedItems.length > 0 && (
+                      <>
+                          <Table columns={columns} dataSource={selectedItems} rowKey="id" pagination={false} size="small" />
+                          <div style={{ marginTop: 16, textAlign: 'right' }}>
+                              <span style={{ marginRight: 16 }}>
+                                  <strong>Total Items:</strong> {selectedItems.reduce((sum, item) => sum + item.quantity, 0)}
+                              </span>
+                              <span>
+                                  <strong>Total Value:</strong> $
+                                  {selectedItems.reduce((sum, item) => {
+                                      const inventoryItem = inventoryItems.find((i) => i.id === item.id);
+                                      return sum + (inventoryItem?.purchase_price || 0) * item.quantity;
+                                  }, 0)}
+                              </span>
+                          </div>
+                      </>
+                  )}
 
-        <Form.Item style={{ marginTop: 24 }}>
-          <Button 
-            type="primary" 
-            htmlType="submit" 
-            loading={processing}
-            disabled={!data.security_id || selectedItems.length === 0}
-          >
-            Allocate Inventory
-          </Button>
-        </Form.Item>
-      </Form>
-    </Card>
+                  <Form.Item style={{ marginTop: 24 }}>
+                      <div className="flex flex-row gap-x-5">
+                          <Button type="primary" htmlType="submit" loading={processing} disabled={!data.security_id || selectedItems.length === 0}>
+                              Allocate Inventory
+                          </Button>
+                          <Button type="primary" htmlType="button" className="bg-red-600!" onClick={onCancel}>
+                              Cancel
+                          </Button>
+                      </div>
+                  </Form.Item>
+              </Form>
+          </Card>
+      </div>
   );
 };
 

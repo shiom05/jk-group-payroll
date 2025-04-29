@@ -4,7 +4,7 @@ import { router } from '@inertiajs/react';
 import CreateInventory from './CreateInventory';
 import { fetchInventoryTypes, fetchSecurities, getInventoryitems } from '@/services/security-managment.service';
 import { Table, Tag, Space, Button } from 'antd';
-import { EyeOutlined, EditOutlined } from '@ant-design/icons';
+import { EyeOutlined, EditOutlined, AppstoreOutlined, PlusCircleFilled, SwapOutlined, RollbackOutlined, DeliveredProcedureOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import EditInventory from './EditInventory';
 import AllocationForm from './AllocationForm';
@@ -38,6 +38,9 @@ const InventoryManagement = () => {
     const [isCreatingNewinventory, setIsCreatingNewinventory] = useState<boolean>(false);
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
 
+    const [allocateInventory, setAllocateInventory] = useState<boolean>(false);
+    const [returnInventory, setReturnInventory] = useState<boolean>(false);
+
     const getInventoryTypes = async()=>{
       const result =  await fetchInventoryTypes();
       setInventoryTypes(result.data)
@@ -53,9 +56,6 @@ const InventoryManagement = () => {
         setSecurities(result.data)
     }
 
-
-   
- 
     useEffect(()=>{
         getInventoryTypes();
         getInventories();
@@ -177,96 +177,57 @@ const InventoryManagement = () => {
         console.log('Edit item:', item);
       };
 
+      const renderHeader = ()=>{
+        if(isCreatingNewinventory){
+          return "CREATE INVENTORY"
+        }else if(editingItem){
+            return "EDIT INVENTORY"
+        }else if(allocateInventory){
+          return "ALLOCATE INVENTORY"
+         }else if(returnInventory){
+          return "RETURN INVENTORY"
+         }else{
+          return "INVENTORY  MANAGEMENT" 
+         }
+      }
+      
     return (
         <Layout>
-            {!isCreatingNewinventory && !editingItem && (
-                <div className="p-6 pt-20">
-                    <h1 className="mb-4 text-3xl font-bold text-gray-800">Inventory Management</h1>
+            <div className="p-10 pt-10">
+                <h1 className="mb-4 text-3xl font-bold text-gray-800"><AppstoreOutlined /> {renderHeader()}</h1>
+             
+             <div className='flex flex-row gap-x-10 mb-10 mt-10'>
+             <Button onClick={() => setIsCreatingNewinventory(true)} icon={<PlusCircleFilled />} type={isCreatingNewinventory?'primary':'dashed'} size="large"  disabled={allocateInventory || editingItem!==null || returnInventory} >
+                Add New Inventory
+                </Button>
+                <Button onClick={() => setAllocateInventory(true)} disabled={isCreatingNewinventory || editingItem!==null || returnInventory}  icon={<DeliveredProcedureOutlined />} type={allocateInventory?'primary':'dashed'} size="large" >
+                  Allocate Inventory
+                </Button>
+                <Button onClick={() => setReturnInventory(true)} disabled={isCreatingNewinventory || editingItem!==null || allocateInventory}  icon={<RollbackOutlined />}  type={returnInventory?'primary':'dashed'}  size="large" >
+                  Return Inventory
+                </Button>
+             </div>
 
-                    <button
-                        onClick={() => setIsCreatingNewinventory(true)}
-                        className="mb-4 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-md transition hover:bg-blue-700"
-                    >
-                        + Add New Inventory
-                    </button>
+             
 
-                    <Table
-                        columns={columns}
-                        dataSource={inventories}
-                        rowKey="id"
-                        loading={false}
-                        bordered
-                        pagination={{
-                            pageSize: 10,
-                            showSizeChanger: true,
-                            pageSizeOptions: ['10', '20', '50', '100'],
-                        }}
-                        scroll={{ x: 'max-content' }}
-                    />
-
-                    {/* <div className="overflow-x-auto rounded-lg bg-white shadow-lg">
-                <table className="w-full min-w-full border-collapse">
-                    <thead>
-                        <tr className="bg-gray-200 text-gray-700">
-                            <th className="px-4 py-3 text-left">ID</th>
-                            <th className="px-4 py-3 text-left">Item Name</th>
-                            <th className="px-4 py-3 text-left">SKU</th>
-                            <th className="px-4 py-3 text-left">Category</th>
-                            <th className="px-4 py-3 text-left">Quantity</th>
-                            <th className="px-4 py-3 text-left">Reorder Level</th>
-                            <th className="px-4 py-3 text-left">Unit Price</th>
-                            <th className="px-4 py-3 text-left">Location</th>
-                            <th className="px-4 py-3 text-left">Status</th>
-                            <th className="px-4 py-3 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {inventories.length ? (
-                            inventories.map((item) => (
-                                <tr key={item.id} className="border-b hover:bg-gray-100">
-                                    <td className="px-4 py-3">{item.id}</td>
-                                    <td className="px-4 py-3">{item.item_name}</td>
-                                    <td className="px-4 py-3">{item.sku}</td>
-                                    <td className="px-4 py-3">{item.category}</td>
-                                    <td className="px-4 py-3">{item.quantity}</td>
-                                    <td className="px-4 py-3">{item.reorder_level}</td>
-                                    <td className="px-4 py-3">${item.unit_price.toFixed(2)}</td>
-                                    <td className="px-4 py-3">{item.location}</td>
-                                    <td className="px-4 py-3">
-                                        <span
-                                            className={`rounded px-2 py-1 text-white ${
-                                                item.status === 'available'
-                                                    ? 'bg-green-500'
-                                                    : item.status === 'low-stock'
-                                                    ? 'bg-yellow-500'
-                                                    : 'bg-red-500'
-                                            }`}
-                                        >
-                                            {item.status}
-                                        </span>
-                                    </td>
-                                    <td className="flex justify-center gap-2 px-4 py-3">
-                                        <button className="rounded bg-yellow-500 px-3 py-1 text-white shadow hover:bg-yellow-600">
-                                            Edit
-                                        </button>
-                                        <button className="rounded bg-red-500 px-3 py-1 text-white shadow hover:bg-red-600">
-                                            View
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={10} className="p-9 text-center font-bold">
-                                    No Inventory Items...
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div> */}
-                </div>
-            )}
+                {!isCreatingNewinventory && !editingItem && !allocateInventory && !returnInventory && (
+                    <>
+                        <Table
+                            columns={columns}
+                            dataSource={inventories}
+                            rowKey="id"
+                            loading={false}
+                            bordered
+                            pagination={{
+                                pageSize: 10,
+                                showSizeChanger: true,
+                                pageSizeOptions: ['10', '20', '50', '100'],
+                            }}
+                            scroll={{ x: 'max-content' }}
+                        />
+                    </>
+                )}
+            </div>
 
             {isCreatingNewinventory && <CreateInventory types={invnentoryType} handleBack={() => setIsCreatingNewinventory(false)} />}
 
@@ -279,9 +240,11 @@ const InventoryManagement = () => {
                 />
             )}
 
-            {/* < AllocationForm employees={securities} inventoryItems={inventories} /> */}
+            {allocateInventory && !editingItem && !isCreatingNewinventory && !returnInventory && (
+                <AllocationForm onCancel={()=>setAllocateInventory(false)} employees={securities} inventoryItems={inventories} />
+            )}
 
-            <ReturnForm employees={securities} />
+            {returnInventory && !editingItem && !isCreatingNewinventory && !allocateInventory && <ReturnForm onCancel={()=>setReturnInventory(false)} employees={securities} />}
         </Layout>
     );
 };
