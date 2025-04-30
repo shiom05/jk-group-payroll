@@ -50,7 +50,7 @@ class LeaveController extends Controller
         $leave = Leave::create($request->all());
 
         // Update the leave balance
-        $this->updateLeaveBalance($leave);
+        // $this->updateLeaveBalance($leave);
 
         return response()->json($leave, 201); 
 
@@ -91,7 +91,7 @@ class LeaveController extends Controller
         $leave->update($request->all());
 
         // Update the leave balance
-        $this->updateLeaveBalance($leave);
+        // $this->updateLeaveBalance($leave);
     }
 
     /**

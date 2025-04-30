@@ -47,3 +47,60 @@ export const getAsset = (securityId: any)=>{
 export const getAllocatedInventoriesForSecuriy = (securityId:any)=>{
     return axios.get(`/api/inventory/allocations/${securityId}`)
 }
+
+
+export const getAllExpenses = ()=>{
+    return axios.get(`/api/expenses/security`)
+}
+export const getSecurityExpenses = (securityId:any)=>{
+    return axios.get(`/api/expenses/security/${securityId}`)
+}
+
+export const createExpenseSecurity = (data: any)=> {
+    return axios.post('/api/expenses/security', data); 
+}
+
+export const editExpenseSecurity = (id: any, data: any)=> {
+    return axios.put(`/api/expenses/security/${id}`, data); 
+}
+
+export const deleteExpenseSecurity = (id: any)=> {
+    return axios.delete(`/api/expenses/security/${id}`); 
+}
+
+
+export const getSecurityCurrentMonthExpenses = (securityId:any)=>{
+    return axios.get(`/api/expenses/security/${securityId}/current-month}`)
+}
+
+
+
+// Loans----
+
+
+export const getAllLoans = ()=>{
+    return axios.get(`/api/loans/security`)
+}
+export const getSecurityLoans = (securityId:any)=>{
+    return axios.get(`/api/loans/security/${securityId}`)
+}
+
+export const createLoanSecurity = (data: any)=> {
+    return axios.post('/api/loans/security', data); 
+}
+
+export const editLoanSecurity = (id: any, data:any)=> {
+    return axios.put(`/api/loans/security/${id}`, data); 
+}
+export const deleteLoanSecurity = (id: any)=> {
+    return axios.delete(`/api/loans/security/${id}`); 
+}
+
+export const getSecurityCurrentMonthLoans = (securityId:any)=>{
+    return axios.get(`/api/loans/security/${securityId}/current-month}`)
+}
+
+export const getSecurityCurrentMonthPayrollLoans = (securityId:any)=>{
+    return axios.get(`/api/loans/security/${securityId}/current-month/payroll}`)
+}
+

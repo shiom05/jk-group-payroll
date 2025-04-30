@@ -9,6 +9,8 @@ use App\Http\Controllers\InventoryTypeController;
 use App\Http\Controllers\InventoryItemsController;
 use App\Http\Controllers\InventoryTransactionController;
 use App\Http\Controllers\SecurityAssetController;
+use App\Http\Controllers\SecurityExpensesController;
+use App\Http\Controllers\SecurityLoansController;
 
 Route::apiResource('api/securities', SecurityController::class)->withoutMiddleware(['auth:api']);
 // Route::apiResource('api/bank-details', BankDetailController::class)->withoutMiddleware(['auth:api']);
@@ -55,6 +57,27 @@ Route::prefix('api/inventory')->group(function () {
     Route::post('/return-asset', [SecurityAssetController::class, 'returnInventory']);
     Route::get('/security/{securityId}', [SecurityAssetController::class, 'getCurrentInventory']);
 });
+
+
+Route::prefix('api/expenses')->group(function () {
+    Route::get('/security', [SecurityExpensesController::class, 'index']);
+    Route::post('/security', [SecurityExpensesController::class, 'store']);
+    Route::put('/security/{securityExpense}', [SecurityExpensesController::class, 'update']);
+    Route::delete('/security/{securityExpense}', [SecurityExpensesController::class, 'destroy']);
+    Route::get('/security/{securityId}', [SecurityExpensesController::class, 'getBySecurity']);
+    Route::get('/security/{securityId}/current-month', [SecurityExpensesController::class, 'getCurrentMonthExpenseBySecurity']);
+});
+
+Route::prefix('api/loans')->group(function () {
+    Route::get('/security', [SecurityLoansController::class, 'index']);
+    Route::post('/security', [SecurityLoansController::class, 'store']);
+    Route::put('/security/{securityLoan}', [SecurityLoansController::class, 'update']);
+    Route::delete('/security/{securityLoan}', [SecurityLoansController::class, 'destroy']);
+    Route::get('/security/{securityId}', [SecurityLoansController::class, 'getBySecurity']);
+    Route::get('/security/{securityId}/current-month', [SecurityLoansController::class, 'getActiveLoansBySecurity']);
+    Route::get('/security/{securityId}/current-month/payroll', [SecurityLoansController::class, 'getLoansForPayroll']);
+});
+
 
 
 

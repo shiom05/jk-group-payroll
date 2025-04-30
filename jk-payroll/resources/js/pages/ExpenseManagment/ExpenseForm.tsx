@@ -1,16 +1,26 @@
 import { getSecuiryDropdownOptions } from '@/utils/security';
-import { Form, Input, InputNumber, Button, Select, DatePicker } from 'antd';
+import { Form, Input, InputNumber, Button, Select, DatePicker, message } from 'antd';
 import { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
+import { useForm } from '@inertiajs/react';
+import ViewExpense from './ViewExpense';
+import { createExpenseSecurity, createLoanSecurity } from '@/services/security-managment.service';
 
 interface ExpenseFormProps {
-  onSubmit: (data: any) => void;
-  initialData?: any;
-  editingId?: number | null;
   securityList: any[];
+  onCancel: () => void;
 }
 
-export default function ExpenseForm({ onSubmit, securityList }: ExpenseFormProps) {
-  const [form] = Form.useForm();
+export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps) {
+  const { data, setData, reset } = useForm<any>({
+    type: null,
+    description: '',
+    date: null,
+    amount: null,
+    security_id: null,
+    installments: null,
+  });
+
   const [mode, setMode] = useState<'security' | 'general'>('security');
   const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
 
@@ -18,148 +28,145 @@ export default function ExpenseForm({ onSubmit, securityList }: ExpenseFormProps
     setOptions(getSecuiryDropdownOptions(securityList));
   }, [securityList]);
 
-  const handleModeChange = (selectedMode: 'security' | 'general') => {
-    setMode(selectedMode);
-    if (selectedMode === 'general') {
-      form.setFieldValue('securityId', null);
+  // const handleModeChange = (selectedMode: 'security' | 'general') => {
+  //   setMode(selectedMode);
+  //   if (selectedMode === 'general') {
+  //     setData('securityId', null);
+  //   }
+  // };
+
+  const handleFinish = async() => {
+    if (!data.type || !data.date || !data.amount || (mode === 'security' && !data.security_id)) {
+      message.error('Please fill all required fields');
+      return;
     }
+
+    const formattedDate = typeof data.date === 'string' ? data.date : dayjs(data.date).format('YYYY-MM-DD');
+
+    if (mode === 'general' && data.type === 'Loan') {
+      message.error('Loans can only be added to securities');
+      return;
+    }
+
+    if (data.type === 'Loan') {
+      const loanPayload = {
+        security_id: data.security_id,
+        total_amount: data.amount,
+        start_date: formattedDate,
+        installments: data.installments,
+        description: data.description,
+      };
+      console.log(loanPayload)
+      const response = await createLoanSecurity(loanPayload)
+      console.log(response);
+       onCancel();
+      
+    } else {
+      const {installments, ...rest} = data;
+      const expensePayload = {
+        ...rest,
+        date: formattedDate,
+      };
+      console.log(expensePayload)
+     const result = await createExpenseSecurity(expensePayload);
+     console.log(result)
+     onCancel()
+    }
+
+    reset();
+    // setMode('security');
   };
 
-  const handleFinish = (values: any) => {
-    const formatted = {
-      ...values,
-      date: values.date.format('YYYY-MM-DD'),
-    };
-    onSubmit(formatted);
-    form.resetFields();
-    setMode('security');
-  };
-
-  const expenseType = Form.useWatch('type', form);
+  const submitButtonDiabled = ()=>{
+    return !data.security_id || !data.amount || !data.date || !data.description || !data.type || (data.type ==="loan" && !data.installments)
+  }
 
   return (
-    <>
-      <div className="mb-6 flex space-x-4">
-        <button
-          type="button"
-          onClick={() => handleModeChange('security')}
-          className={`rounded-md px-4 py-2 ${mode === 'security' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-        >
-          Security Expense
-        </button>
-        <button
-          type="button"
-          onClick={() => handleModeChange('general')}
-          className={`rounded-md px-4 py-2 ${mode === 'general' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-        >
-          General Company Expense
-        </button>
-      </div>
+    <Form layout="vertical" onFinish={handleFinish} className="space-y-4 rounded-lg bg-white p-6! shadow-md">
+      <h2 className="text-2xl font-semibold text-gray-700">Add {mode === 'security' ? 'Security' : 'General'} Expense</h2>
 
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleFinish}
-        className="mb-10! space-y-4 rounded-lg bg-white p-6! shadow-md"
-      >
-        <h2 className="text-2xl font-semibold text-gray-700">Add Expense</h2>
+      {mode === 'security' && (
+        <Form.Item
+          label="Select Security"
+          className="mb-4"
+          required
+          rules={[{ required: true }]}
+        >
+          <Select
+            showSearch
+            placeholder="Search Security"
+            optionFilterProp="label"
+            className="w-full"
+            value={data.security_id}
+            onChange={(value) => setData('security_id', value)}
+            options={options}
+          />
+        </Form.Item>
+      )}
 
-        {mode === 'security' && (
-          <Form.Item
-            name="securityId"
-            label={<span className="block text-sm font-medium text-gray-700">Select Security</span>}
-            className="mb-4"
-            rules={[{ required: true, message: 'Please select a security' }]}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Form.Item label="Expense Type" required>
+          <Select
+            placeholder="Select expense type"
+            value={data.type}
+            onChange={(val) => setData('type', val)}
           >
-            <Select
-              showSearch
-              placeholder="Search to Select Security"
-              optionFilterProp="label"
-              className="w-full"
-              filterSort={(optionA, optionB) =>
-                (optionA?.label ?? '').toLowerCase().localeCompare((optionB?.label ?? '').toLowerCase())
-              }
-              options={options}
+            <Select.Option value="Food">Food</Select.Option>
+            <Select.Option value="Travel">Travel</Select.Option>
+            <Select.Option value="Accommodation">Accommodation</Select.Option>
+            {mode === 'security' && <Select.Option value="Loan">Loan</Select.Option>}
+          </Select>
+        </Form.Item>
+
+        {data.type && (
+          <Form.Item label="Description" required>
+            <Input
+              value={data.description}
+              onChange={(e) => setData('description', e.target.value)}
             />
           </Form.Item>
         )}
+        <Form.Item label={data.type==="Loan"?"Loan Start Date":"Date"} required>
+          <DatePicker
+            className="w-full"
+            value={data.date ? dayjs(data.date) : undefined}
+            onChange={(date) => setData('date', date ? date.toISOString() : '')}
+          />
+        </Form.Item>
 
-        {(mode === 'general' || form.getFieldValue('securityId')) && (
-          <div className='grid grid-cols-3 gap-4'>
-            <Form.Item
-              name="type"
-              label={<span className="text-sm font-medium text-gray-700">Expense Type</span>}
-              className="mb-4"
-              rules={[{ required: true, message: 'Please select expense type' }]}
-            >
-              <Select placeholder="Select expense type" className="w-full">
-                <Select.Option value="Inventory">Inventory</Select.Option>
-                <Select.Option value="Food">Food</Select.Option>
-                <Select.Option value="Travel">Travel</Select.Option>
-                <Select.Option value="Accommodation">Accommodation</Select.Option>
-                <Select.Option value="Loan">Loan</Select.Option>
-              </Select>
-            </Form.Item>
+        <Form.Item label="Amount (LKR)" required>
+          <InputNumber
+            min={1}
+            className="w-full"
+            value={data.amount}
+            onChange={(val) => setData('amount', val ?? 0)}
+          />
+        </Form.Item>
 
-            {expenseType === 'Inventory' && (
-              <Form.Item
-                name="item"
-                label={<span className="block text-sm font-medium text-gray-700">Item</span>}
-                className="mb-4"
-                rules={[{ required: true, message: 'Please enter item name' }]}
-              >
-                <Input className="w-full" />
-              </Form.Item>
-            )}
-
-            {['Food', 'Travel', 'Accommodation', 'Loan'].includes(expenseType) && (
-              <Form.Item
-                name="description"
-                label={<span className="block text-sm font-medium text-gray-700">Description</span>}
-                className="mb-4"
-                rules={[{ required: true, message: 'Please enter description' }]}
-              >
-                <Input className="w-full" />
-              </Form.Item>
-            )}
-
-            <Form.Item
-              name="date"
-              label={<span className="block text-sm font-medium text-gray-700">Date</span>}
-              className="mb-4"
-              rules={[{ required: true, message: 'Please select a date' }]}
-            >
-              <DatePicker className="w-full" />
-            </Form.Item>
-
-            <Form.Item
-              name="amount"
-              label={<span className="block text-sm font-medium text-gray-700">Amount (LKR)</span>}
-              className="mb-4"
-              rules={[{ required: true, message: 'Please enter amount' }]}
-            >
-              <InputNumber min={1} className="w-full" />
-            </Form.Item>
-
-            {expenseType === 'Loan' && (
-              <Form.Item
-                name="installments"
-                label={<span className="block text-sm font-medium text-gray-700">Installments</span>}
-                className="mb-4"
-                rules={[{ required: true, message: 'Please enter number of installments' }]}
-              >
-                <InputNumber min={1} className="w-full" />
-              </Form.Item>
-            )}
-          </div>
+        {data.type === 'Loan' && (
+          <Form.Item label="Installments" required>
+            <InputNumber
+              min={1}
+              className="w-full"
+              value={data.installments}
+              onChange={(val) => setData('installments', val)}
+            />
+          </Form.Item>
         )}
+      </div>
 
-        <Form.Item className="!mt-6">
-          <Button htmlType="submit" className="rounded-md! bg-blue-600! px-4! py-2! text-white! shadow! hover:bg-blue-700!">
+      <ViewExpense isLoan={data.type === 'Loan'? true: false}  expenses={[data]} isEdit={false}  />
+
+      <Form.Item className="mt-6">
+        <div className="flex flex-row gap-x-5">
+          <Button type="primary" disabled={submitButtonDiabled()} htmlType="submit">
             Add Expense
           </Button>
-        </Form.Item>
-      </Form>
-    </>
+          <Button type="primary" htmlType="button" className="bg-red-600!" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </Form.Item>
+    </Form>
   );
 }

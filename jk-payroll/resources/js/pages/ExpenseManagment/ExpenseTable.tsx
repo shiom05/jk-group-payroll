@@ -1,4 +1,12 @@
-import { Pencil, Trash2 } from 'lucide-react';
+import { Table, Input, Button, Space, Tag, DatePicker } from 'antd';
+import {
+  SearchOutlined,
+  EditOutlined,
+  DeleteOutlined
+} from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
+import { useState } from 'react';
+import dayjs from 'dayjs';
 
 interface ExpenseTableProps {
   expenses: any[];
@@ -6,43 +14,80 @@ interface ExpenseTableProps {
   onDelete: (id: number) => void;
 }
 
-export default function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) {
+export default function ExpensesTable({ expenses, onEdit, onDelete }: ExpenseTableProps) {
+  const [searchText, setSearchText] = useState('');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const filteredExpenses = expenses
+    .filter((exp) => exp.type !== 'Loan')
+    .filter((exp) =>
+      exp.description?.toLowerCase().includes(searchText.toLowerCase()) ||
+      exp.type?.toLowerCase().includes(searchText.toLowerCase()) ||
+      exp?.security?.securityName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      exp?.securityId?.toString().includes(searchText)
+    )
+    .filter((exp) =>
+      selectedDate ? exp.date === selectedDate : true
+    );
+
+  const columns: ColumnsType<any> = [
+    {
+      title: 'Security ID',
+      dataIndex: 'security_id',
+    },
+    {
+      title: 'Security Name',
+      dataIndex: ['security', 'securityName'],
+      render: (name: string) => name || '-',
+    },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      render: (text: string) => <Tag color="blue">{text}</Tag>,
+    },
+    {
+      title: 'Description',
+      dataIndex: 'description',
+    },
+    {
+      title: 'Date',
+      dataIndex: 'date',
+    },
+    {
+      title: 'Amount (LKR)',
+      dataIndex: 'amount',
+      render: (val: number) => val.toLocaleString(),
+    },
+    {
+      title: 'Actions',
+      render: (_, record) => (
+        <Space>
+          <Button icon={<EditOutlined />} type="link" onClick={() => onEdit(record)} />
+          <Button icon={<DeleteOutlined />} type="link" danger onClick={() => onDelete(record.id)} />
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h3 className="text-xl font-semibold text-gray-700 mb-4">Expense List</h3>
-      <table className="w-full border-collapse border border-gray-300">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="border border-gray-300 px-4 py-2">Type</th>
-            <th className="border border-gray-300 px-4 py-2">Item/Description</th>
-            <th className="border border-gray-300 px-4 py-2">Date</th>
-            <th className="border border-gray-300 px-4 py-2">Amount (LKR)</th>
-            <th className="border border-gray-300 px-4 py-2">Installments</th>
-            <th className="border border-gray-300 px-4 py-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {expenses.map((exp) => (
-            <tr key={exp.id} className="text-center">
-              <td className="border border-gray-300 px-4 py-2">{exp.type}</td>
-              <td className="border border-gray-300 px-4 py-2">{exp.item || exp.description}</td>
-              <td className="border border-gray-300 px-4 py-2">{exp.date}</td>
-              <td className="border border-gray-300 px-4 py-2">{exp.amount}</td>
-              <td className="border border-gray-300 px-4 py-2">{exp.installments || '-'}</td>
-              <td className="border border-gray-300 px-4 py-2">
-                <div className="flex justify-center space-x-2">
-                  <button onClick={() => onEdit(exp)} className="text-blue-600 hover:text-blue-800">
-                    <Pencil size={18} />
-                  </button>
-                  <button onClick={() => onDelete(exp.id)} className="text-red-600 hover:text-red-800">
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="mb-8">
+      <div className="mb-4 flex gap-4">
+        <Input
+          placeholder="Search type, description or security"
+          prefix={<SearchOutlined />}
+          onChange={(e) => setSearchText(e.target.value)}
+          allowClear
+        />
+        <DatePicker onChange={(date) => setSelectedDate(date ? dayjs(date).format('YYYY-MM-DD') : null)} />
+      </div>
+
+      <h3 className="text-lg font-semibold text-gray-700 mb-2">Expenses</h3>
+      <Table
+        columns={columns}
+        dataSource={filteredExpenses.map((item) => ({ ...item, key: item.id }))}
+        pagination={{ pageSize: 5 }}
+        bordered
+      />
     </div>
   );
 }

@@ -1,149 +1,153 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { Form, Input, InputNumber, Button, Select, DatePicker } from 'antd';
+import dayjs from 'dayjs';
+import { editExpenseSecurity, editLoanSecurity } from '@/services/security-managment.service';
 
 interface ExpenseFormProps {
-    onSubmit: (data: any) => void;
-    initialData?: any;
-    securityList: any[];
-    onCancelUpdate: () => void;
+  initialData?: any;
+  onCancelUpdate?: () => void;
+  onCancelLoanUpdate?: ()=> void;
+  isLoanEdit: boolean;
 }
 
-export default function EditExpenseForm({ onSubmit, securityList, initialData, onCancelUpdate }: ExpenseFormProps) {
-  const [formData, setFormData] = useState<any>({
-    type: '',
-    item: '',
-    description: '',
-    date: '',
-    amount: '',
-    installments: '',
-    securityId: '',
-    ...initialData
-  });
+export default function EditExpenseForm({ initialData, onCancelUpdate, onCancelLoanUpdate, isLoanEdit }: ExpenseFormProps) {
+  const [form] = Form.useForm();
 
-  const handleChange = (e: any) => {
-    const { name, value } = e.target;
-    setFormData((prev: any) => ({ ...prev, [name]: value }));
+  useEffect(() => {
+
+    if (initialData) {
+        if(isLoanEdit){
+            form.setFieldsValue({
+                ...initialData,
+                start_date: initialData.start_date ? dayjs(initialData.start_date) : null,
+              });
+        }else{
+            form.setFieldsValue({
+                ...initialData,
+                date: initialData.date ? dayjs(initialData.date) : null,
+              });
+        }
+      
+    }
+
+  }, [initialData, form]);
+
+  const handleFinish = async(values: any) => {
+    if(isLoanEdit){
+        const { security,created_at, updated_at, id, ...rest } = initialData;
+        const formattedData = {
+            ...rest,
+            ...values,
+            start_date: dayjs(values.start_date).format('YYYY-MM-DD'),
+        };
+        console.log(formattedData);
+        const result = await editLoanSecurity(id, formattedData);
+        console.log(result);
+        onCancelLoanUpdate?.();
+
+    }else{
+        const { security,created_at, updated_at, id, ...rest } = initialData;
+        const formattedData = {
+            ...rest,
+            ...values,
+            date: dayjs(values.date).format('YYYY-MM-DD'),
+          };
+          console.log(formattedData);
+          const result = await editExpenseSecurity(id, formattedData);
+          console.log(result);
+          onCancelUpdate?.();
+    }
   };
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-    onSubmit(formData);
-    setFormData({
-      type: '',
-      item: '',
-      description: '',
-      date: '',
-      amount: '',
-      installments: '',
-      securityId: '',
-    });
-  };
 
   return (
     <>
-    <form onSubmit={handleSubmit} className="mb-10 space-y-4 rounded-lg bg-white p-6 shadow-md">
-         <h2 className="text-2xl font-semibold text-gray-700">{'Edit Expense'}</h2>
-        {formData.securityId == '' && <div>
-          <label className="block text-sm font-medium text-gray-700">Select Security</label>
-          <select name="securityId" value={formData.securityId} onChange={handleChange} className="mt-1 w-full rounded-md border p-2" required>
-              <option value="">Select Security</option>
-              {securityList.map((security) => (
-                  <option key={security.securityId} value={security.securityId}>
-                      {security.securityName}
-                  </option>
-              ))}
-          </select>
-      </div>   }      
-      <div className="grid grid-cols-3 gap-4">
-                 <div>
-                     <label className="block text-sm font-medium text-gray-700">Expense Type</label>
-                     <select name="type" value={formData.type} onChange={handleChange} className="mt-1 w-full rounded-md border p-2" required>
-                         <option value="">Select</option>
-                         <option value="Inventory">Inventory</option>
-                         <option value="Food">Food</option>
-                         <option value="Travel">Travel</option>
-                         <option value="Accommodation">Accommodation</option>
-                         <option value="Loan">Loan</option>
-                     </select>
-                 </div>
+    
+    {!isLoanEdit? <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleFinish}
+      className="mb-10! space-y-4 rounded-lg bg-white p-6! shadow-md"
+    >
+      <h2 className="text-2xl font-semibold text-gray-700">Edit Expense</h2>
 
-                 {formData.type === 'Inventory' && (
-                     <div>
-                         <label className="block text-sm font-medium text-gray-700">Item</label>
-                         <input
-                             type="text"
-                             name="item"
-                             value={formData.item}
-                             onChange={handleChange}
-                             className="mt-1 w-full rounded-md border p-2"
-                         />
-                     </div>
-                 )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Form.Item label="Expense Type" name="type" rules={[{ required: true }]}>
+          <Select placeholder="Select">
+            <Select.Option value="Food">Food</Select.Option>
+            <Select.Option value="Travel">Travel</Select.Option>
+            <Select.Option value="Accommodation">Accommodation</Select.Option>
+            <Select.Option value="Loan">Loan</Select.Option>
+          </Select>
+        </Form.Item>
 
-                 {['Food', 'Travel', 'Accommodation', 'Loan'].includes(formData.type) && (
-                     <div>
-                         <label className="block text-sm font-medium text-gray-700">Description</label>
-                         <input
-                             type="text"
-                             name="description"
-                             value={formData.description}
-                             onChange={handleChange}
-                             className="mt-1 w-full rounded-md border p-2"
-                         />
-                     </div>
-                 )}
+       
+          <Form.Item label="Description" name="description">
+            <Input />
+          </Form.Item>
+    
 
-                 <div>
-                     <label className="block text-sm font-medium text-gray-700">Date</label>
-                     <input
-                         type="date"
-                         name="date"
-                         value={formData.date}
-                         onChange={handleChange}
-                         className="mt-1 w-full rounded-md border p-2"
-                         required
-                     />
-                 </div>
+        <Form.Item label="Date" name="date" rules={[{ required: true }]}>
+          <DatePicker className="w-full" />
+        </Form.Item>
 
-                 <div>
-                     <label className="block text-sm font-medium text-gray-700">Amount (LKR)</label>
-                     <input
-                         type="number"
-                         name="amount"
-                         value={formData.amount}
-                         onChange={handleChange}
-                         className="mt-1 w-full rounded-md border p-2"
-                         required
-                     />
-                 </div>
-
-                 {formData.type === 'Loan' && (
-                     <div>
-                         <label className="block text-sm font-medium text-gray-700">Installments</label>
-                         <input
-                             type="number"
-                             name="installments"
-                             value={formData.installments}
-                             onChange={handleChange}
-                             className="mt-1 w-full rounded-md border p-2"
-                         />
-                     </div>
-                 )}
+        <Form.Item label="Amount (LKR)" name="amount" rules={[{ required: true }]}>
+          <InputNumber className="w-full" min={1} />
+        </Form.Item>
       </div>
 
-      <div className='flex flex-row gap-x-5'>
-      <button type='button' onClick={()=>{onCancelUpdate()}} className="rounded-md bg-red-600 px-4 py-2 text-white shadow hover:bg-red-700">
-             Cancel Expense
-      </button>
-
-      <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700">
-             Update Expense
-      </button>
+      <div className="flex flex-row gap-x-5">
+        <Button type="primary" htmlType="submit">
+          Update Expense
+        </Button>
+        <Button danger onClick={onCancelUpdate}>
+          Cancel
+        </Button>
       </div>
-    </form>
+    </Form>
+    
+    : 
+    
 
-      
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleFinish}
+      className="mb-10! space-y-4 rounded-lg bg-white p-6! shadow-md"
+    >
+      <h2 className="text-2xl font-semibold text-gray-700">Edit Expense</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+
+          <Form.Item label="Description" name="description">
+            <Input />
+          </Form.Item>
+
+        <Form.Item label="Date" name="start_date" rules={[{ required: true }]}>
+          <DatePicker className="w-full" />
+        </Form.Item>
+
+        <Form.Item label="Amount (LKR)" name="total_amount" rules={[{ required: true }]}>
+          <InputNumber className="w-full" min={1} />
+        </Form.Item>
+
+        
+          <Form.Item label="Installments" name="installments" rules={[{ required: true }]}>
+            <InputNumber className="w-full" min={1} />
+          </Form.Item>
+      </div>
+
+      <div className="flex flex-row gap-x-5">
+        <Button type="primary" htmlType="submit">
+          Update Expense
+        </Button>
+        <Button danger onClick={onCancelLoanUpdate}>
+          Cancel
+        </Button>
+      </div>
+    </Form>}
     
     </>
-     
   );
 }
