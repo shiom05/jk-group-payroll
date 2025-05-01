@@ -6,6 +6,11 @@ import Security from '@/types/jk/security';
 import ViewSecurity from './ViewSecurity';
 import { getStatusText } from '@/utils/security';
 import EditSecurity from './EditSecurity';
+import { Table, Button, Tag } from 'antd';
+import { ColumnsType } from 'antd/es/table';
+
+import { EyeOutlined, EditOutlined  } from '@ant-design/icons';
+
 
 const SecurityManagment = () => {
     const [securities, setSecurities] = useState<any>([]);
@@ -21,6 +26,78 @@ const SecurityManagment = () => {
         }
     };
 
+    function getStatusText(code: number) {
+        switch (code){
+            case 200:
+                return 'Active';
+            case 300:
+                return 'Pending';
+            case 400:
+                return 'Inactive';
+            case 500:
+                return 'Terminated';
+        }
+      }
+
+    const columns: ColumnsType<Security> = [
+        {
+            title: 'ID',
+            dataIndex: 'securityId',
+            key: 'securityId',
+            sorter: (a: any, b: any) => a.securityId - b.securityId,
+        },
+        {
+            title: 'Name',
+            dataIndex: 'securityName',
+            key: 'securityName',
+            sorter: (a: any, b: any) => a.securityName.localeCompare(b.securityName),
+        },
+        {
+            title: 'NIC',
+            dataIndex: 'securityNicNumber',
+            key: 'securityNicNumber',
+            sorter: (a: any, b: any) => a.securityNicNumber.localeCompare(b.securityNicNumber),
+        },
+        {
+            title: 'Contact',
+            dataIndex: 'securityPrimaryContact',
+            key: 'securityPrimaryContact',
+        },
+        {
+            title: 'Status',
+            dataIndex: 'securityStatus',
+            key: 'securityStatus',
+            render: (status: number) => (
+              <Tag color={getStatusText(status) === 'Active' ? 'green' : 'red'}>
+                {getStatusText(status)}
+              </Tag>
+            ),
+            filters: [
+              { text: 'Active', value: 200 },
+              { text: 'Pending', value: 300 },
+              { text: 'Inactive', value: 400 },
+              { text: 'Terminated', value: 500 },
+            ],
+            onFilter: (value: any, record: Security) => record.securityStatus === value,
+          
+        },
+        {
+            title: 'Actions',
+            key: 'actions',
+            render: (_: any, record: any) => (
+                <div className="flex justify-center gap-2">
+                     <Button icon={<EditOutlined />} size="middle" onClick={() => setToEditSecuritySelected(record)} />
+
+                    <Button icon={<EyeOutlined />} size="middle" onClick={() => setToViewSecuritySelected(record)} />
+                   
+                    
+                </div>
+            ),
+        },
+    ];
+
+   
+      
 
     useEffect(() => {
         fetchSecurities();
@@ -38,7 +115,7 @@ const SecurityManagment = () => {
 
 
                 {/* Security Table */}
-                <div className="overflow-x-auto rounded-lg bg-white shadow-lg">
+                {/* <div className="overflow-x-auto rounded-lg bg-white shadow-lg">
                     <table className="w-full min-w-full border-collapse">
                         <thead>
                             <tr className="bg-gray-200 text-gray-700">
@@ -84,7 +161,18 @@ const SecurityManagment = () => {
                             )): <tr><td className='flex items-center w-full p-9 font-bold' ><p>No Securities .....</p> </td></tr>}
                         </tbody>
                     </table>
-                </div>
+                </div> */}
+
+            <Table
+                columns={columns}
+                dataSource={securities}
+                rowKey="securityId"
+                pagination={false}
+                className="rounded-lg shadow-lg"
+                scroll={{ x: true }}
+                locale={{ emptyText: 'No Securities .....' }}
+                />
+
             </div>}
 
             {

@@ -184,10 +184,11 @@ const EditSecurity = ({ securityData, back }: editProps) => {
     }, [securityId]);
 
     return (
-        <Layout>
-            {showAlert && <Alert variant={'default'} />}
+        
+         <>
+            {/* {showAlert && <Alert variant={'default'} />} */}
             <div className='pt-20 pb-20'>
-                <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-4 rounded-lg bg-white p-6 py-10 shadow-lg">
+                <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-4 rounded-lg p-10 bg-white shadow-lg">
                     <h2 className="mb-4 text-2xl font-semibold text-gray-700">Edit Security Personnel</h2>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -601,7 +602,7 @@ const EditSecurity = ({ securityData, back }: editProps) => {
                     </div>
                 </form>
             </div>
-        </Layout>
+            </>
     );
 };
 

@@ -28,8 +28,8 @@ Route::prefix('api/security-leaves')->group(function () {
     Route::get('/security/{securityId}', [LeaveController::class, 'getLeavesBySecurity']);
     Route::get('/{id}', [LeaveController::class, 'show']);
     Route::post('/', [LeaveController::class, 'store']);
-    Route::put('/{id}', [LeaveController::class, 'update']);
-    Route::delete('/{id}', [LeaveController::class, 'destroy']);
+    Route::put('/{leave}', [LeaveController::class, 'update']);
+    Route::delete('/{leave}', [LeaveController::class, 'destroy']);
 });
 
 Route::prefix('api/security-leave-balances')->group(function () {

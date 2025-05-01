@@ -1,155 +1,91 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Button, Form, Input, Select, DatePicker, Card, Space, message } from 'antd';
+import dayjs from 'dayjs';
+
+const { Option } = Select;
+const { TextArea } = Input;
 
 const leaveReasons: { [key: string]: string[] } = {
   Annual: ['Vacation', 'Travel', 'Rest'],
   Casual: ['Family Matter', 'Personal Errand'],
-  Sick: ['Fever', 'Medical Appointment', 'Flu']
+  Sick: ['Fever', 'Medical Appointment', 'Flu'],
 };
 
-const EditLeave = ({ leaveId, onClose, onUpdate }: { leaveId: number; onClose: () => void; onUpdate: () => void }) => {
-  const [users, setUsers] = useState([]);
-  const [leave, setLeave] = useState<any>(null);
-
-  const fetchLeave = async () => {
-    try {
-      const response = await axios.get(`/api/leaves/${leaveId}`);
-      setLeave(response.data);
-    } catch (error) {
-      console.error('Failed to fetch leave:', error);
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get('/api/users');
-      setUsers(response.data);
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-    }
-  };
-
+const EditLeave = ({ leave, onClose, onUpdate }: { leave: any; onClose: () => void, onUpdate: () => void }) => {
+  const [form] = Form.useForm();
+  const [selectedType, setSelectedType] = useState<string>(leave?.leaveType);
+   console.log(leave)
   useEffect(() => {
-    fetchUsers();
-    fetchLeave();
-  }, [leaveId]);
+    form.setFieldsValue({
+      ...leave,
+      start_date: dayjs(leave.start_date),
+      end_date: dayjs(leave.end_date),
+    });
+  }, [leave, form]);
 
-  const handleChange = (e: any) => {
-    setLeave((prev: any) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = async (values: any) => {
+    const { security,updated_at,created_at,leave_id, ...rest} = leave;
     try {
-      await axios.put(`/api/leaves/${leaveId}`, leave);
+      await axios.put(`/api/security-leaves/${leave_id}`, {
+        ...rest,
+        ...values,
+        //  dayjs(values.start_date).format('YYYY-MM-DD')
+         start_date: values.start_date.format('YYYY-MM-DD'),
+         end_date: values.end_date.format('YYYY-MM-DD'),
+      });
+      message.success('Leave updated successfully');
       onUpdate();
-      onClose();
     } catch (error) {
+      message.error('Failed to update leave');
       console.error('Failed to update leave:', error);
     }
   };
 
-  if (!leave) return <div>Loading...</div>;
-
   return (
-    <div className="mb-6 rounded-lg bg-white p-6 shadow-md">
-      <h2 className="mb-4 text-xl font-bold text-gray-700">Edit Leave</h2>
+    <Card title="Edit Leave" className="mb-6 shadow-md">
+      <Form layout="vertical" form={form} onFinish={handleSubmit}>
+        <Form.Item name="leave_type" label="Leave Type" rules={[{ required: true }]}>
+          <Select onChange={(value) => setSelectedType(value)}>
+            {Object.keys(leaveReasons).map((type) => (
+              <Option key={type} value={type}>
+                {type}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
-      <div className="mb-4">
-        <label className="mb-1 block font-semibold text-gray-600">Employee</label>
-        <select
-          name="userId"
-          value={leave.userId}
-          onChange={handleChange}
-          className="w-full rounded border px-3 py-2"
-        >
-          <option value="">Select Employee</option>
-          {users.map((user: any) => (
-            <option key={user.id} value={user.id}>{user.name}</option>
-          ))}
-        </select>
-      </div>
+        <Form.Item name="reason" label="Reason" rules={[{ required: true }]}>
+          <Select placeholder="Select Reason">
+            {leaveReasons[selectedType || leave.leaveType]?.map((reason) => (
+              <Option key={reason} value={reason}>
+                {reason}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
-      <div className="mb-4">
-        <label className="mb-1 block font-semibold text-gray-600">Leave Type</label>
-        <select
-          name="leaveType"
-          value={leave.leaveType}
-          onChange={(e) => {
-            handleChange(e);
-            setLeave((prev: any) => ({ ...prev, reason: '' }));
-          }}
-          className="w-full rounded border px-3 py-2"
-        >
-          {['Annual', 'Casual', 'Sick'].map(type => (
-            <option key={type} value={type}>{type}</option>
-          ))}
-        </select>
-      </div>
+        <Form.Item name="description" label="Description">
+          <TextArea rows={3} />
+        </Form.Item>
 
-      <div className="mb-4">
-        <label className="mb-1 block font-semibold text-gray-600">Reason</label>
-        <select
-          name="reason"
-          value={leave.reason}
-          onChange={handleChange}
-          className="w-full rounded border px-3 py-2"
-        >
-          <option value="">Select Reason</option>
-          {leaveReasons[leave.leaveType]?.map(reason => (
-            <option key={reason} value={reason}>{reason}</option>
-          ))}
-        </select>
-      </div>
+        <Space size="middle" style={{ display: 'flex' }}>
+          <Form.Item name="start_date" label="Start Date" rules={[{ required: true }]}>
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item name="end_date" label="End Date" rules={[{ required: true }]}>
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+        </Space>
 
-      <div className="mb-4">
-        <label className="mb-1 block font-semibold text-gray-600">Description</label>
-        <textarea
-          name="description"
-          value={leave.description}
-          onChange={handleChange}
-          className="w-full rounded border px-3 py-2"
-          rows={3}
-        />
-      </div>
-
-      <div className="mb-4 flex gap-4">
-        <div className="w-1/2">
-          <label className="mb-1 block font-semibold text-gray-600">Start Date</label>
-          <input
-            type="date"
-            name="startDate"
-            value={leave.startDate}
-            onChange={handleChange}
-            className="w-full rounded border px-3 py-2"
-          />
+        <div className="flex justify-end gap-4">
+          <Button onClick={onClose}>Cancel</Button>
+          <Button type="primary" htmlType="submit">
+            Update
+          </Button>
         </div>
-        <div className="w-1/2">
-          <label className="mb-1 block font-semibold text-gray-600">End Date</label>
-          <input
-            type="date"
-            name="endDate"
-            value={leave.endDate}
-            onChange={handleChange}
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-4">
-        <button
-          onClick={onClose}
-          className="rounded bg-gray-300 px-4 py-2 font-semibold text-gray-800"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSubmit}
-          className="rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
-        >
-          Update
-        </button>
-      </div>
-    </div>
+      </Form>
+    </Card>
   );
 };
 

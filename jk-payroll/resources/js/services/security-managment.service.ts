@@ -40,11 +40,11 @@ export const returnAsset = (data: any)=> {
     return axios.post('/api/inventory/return-asset', data); 
 }
 
-export const getAsset = (securityId: any)=>{
+export const getAsset = (securityId: any)=>{ //get current assets 
     return axios.get(`/api/inventory/security/${securityId}`); 
 }
 
-export const getAllocatedInventoriesForSecuriy = (securityId:any)=>{
+export const getAllocatedInventoriesForSecuriy = (securityId:any)=>{ //use to calculate expense monthly
     return axios.get(`/api/inventory/allocations/${securityId}`)
 }
 

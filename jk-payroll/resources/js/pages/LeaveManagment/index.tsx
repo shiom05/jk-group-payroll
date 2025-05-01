@@ -3,44 +3,21 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import CreateLeave from './CreateLeave';
 import { formatDate, getLeaveStatus } from '@/utils/security';
+import { Button, Table, Tag, Space, Popconfirm, message } from 'antd';
+import {
+  SearchOutlined,
+  EditOutlined,
+  DeleteOutlined
+} from '@ant-design/icons';
+import EditLeave from './EditLeave';
 
 const LeaveManagement = () => {
   const [leaves, setLeaves] = useState<any[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
+  const [leaveEdit, setLeaveEdit]= useState<any>(null);
+
   const fetchLeaves = async () => {
-    // setLeaves([
-    //     {
-    //       leaveId: 1,
-    //       employeeName: "John Doe",
-    //       leaveType: "Annual",
-    //       reason: "Vacation",
-    //       description: "Taking a break with family",
-    //       startDate: "2025-05-10",
-    //       endDate: "2025-05-15",
-    //       status: "InProgress"
-    //     },
-    //     {
-    //       leaveId: 2,
-    //       employeeName: "Jane Smith",
-    //       leaveType: "Sick",
-    //       reason: "Medical condition",
-    //       description: "Feeling unwell, need rest",
-    //       startDate: "2025-05-12",
-    //       endDate: "2025-05-14",
-    //       status: "Pending"
-    //     },
-    //     {
-    //       leaveId: 3,
-    //       employeeName: "Mark Johnson",
-    //       leaveType: "Casual",
-    //       reason: "Personal",
-    //       description: "Urgent personal matter",
-    //       startDate: "2025-05-13",
-    //       endDate: "2025-05-13",
-    //       status: "Completed"
-    //     },
-    //   ]);
     try {
       const response = await axios.get('api/security-leaves');
       setLeaves(response.data);
@@ -49,67 +26,110 @@ const LeaveManagement = () => {
     }
   };
 
+  const deleteLeave = async (id: number) => {
+    try {
+      console.log(id)
+      await axios.delete(`api/security-leaves/${id}`);
+      fetchLeaves();
+    } catch (error) {
+      console.error('Failed to delete leave:', error);
+      message.error('Delete failed');
+    }
+  };
+
   useEffect(() => {
     fetchLeaves();
   }, []);
+
+  const columns = [
+    {
+      title: 'Employee',
+      dataIndex: ['security', 'securityName'],
+      key: 'employee',
+    },
+    {
+      title: 'Type',
+      dataIndex: 'leave_type',
+      key: 'type',
+    },
+    {
+      title: 'Reason',
+      dataIndex: 'reason',
+      key: 'reason',
+    },
+    {
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+    },
+    {
+      title: 'Start',
+      dataIndex: 'start_date',
+      key: 'start_date',
+      render: (text: string) => formatDate(text),
+    },
+    {
+      title: 'End',
+      dataIndex: 'end_date',
+      key: 'end_date',
+      render: (text: string) => formatDate(text),
+    },
+    {
+      title: 'Status',
+      key: 'status',
+      render: (_: any, record: any) => {
+        const status = getLeaveStatus(record.start_date, record.end_date);
+        const color = status === 'Pending' ? 'gold' : status === 'Completed' ? 'green' : 'red';
+        return <Tag color={color}>{status}</Tag>;
+      }
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_: any, record: any) => (
+        <Space>
+                  <Button icon={<EditOutlined />} type="link" onClick={() => setLeaveEdit(record)} />
+                  <Button icon={<DeleteOutlined />} type="link" danger onClick={() => deleteLeave(record.leave_id)} />
+                </Space>
+      )
+    }
+  ];
 
   return (
     <Layout>
       <div className="p-6">
         <h1 className="mb-4 text-3xl font-bold text-gray-800">Security Leave Management</h1>
 
-       {
-        !showCreateForm && 
-        <>
-         <button
-          onClick={() => setShowCreateForm(true)}
-          className="mb-4 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-md transition hover:bg-blue-700"
-        >
-          + Create Leave
-        </button>
+        {(!showCreateForm && !leaveEdit) && (
+          <>
+            <Button
+              type="primary"
+              className="mb-4"
+              onClick={() => setShowCreateForm(true)}
+            >
+              + Create Leave
+            </Button>
 
-        <div className="mt-6 overflow-x-auto rounded-lg bg-white shadow-lg">
-          <table className="w-full border-collapse">
-            <thead className="bg-gray-200 text-gray-700">
-              <tr>
-                <th className="px-4 py-3 text-left">Employee</th>
-                <th className="px-4 py-3 text-left">Type</th>
-                <th className="px-4 py-3 text-left">Reason</th>
-                <th className="px-4 py-3 text-left">Description</th>
-                <th className="px-4 py-3 text-left">Start</th>
-                <th className="px-4 py-3 text-left">End</th>
-                <th className="px-4 py-3 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaves.length ? leaves.map((leave, index) => (
-                <tr key={index} className="border-b hover:bg-gray-100">
-                  <td className="px-4 py-3">{leave.security.securityName}</td>
-                  <td className="px-4 py-3">{leave.leave_type}</td>
-                  <td className="px-4 py-3">{leave.reason}</td>
-                  <td className="px-4 py-3">{leave.description}</td>
-                  <td className="px-4 py-3">{formatDate(leave.start_date)}</td>
-                  <td className="px-4 py-3">{formatDate(leave.end_date)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded px-2 py-1 text-white ${getLeaveStatus(leave.start_date, leave.end_date) === 'Pending' ? 'bg-yellow-500' : getLeaveStatus(leave.start_date, leave.end_date) === 'Completed'? 'bg-green-500' : 'bg-red-500'}`}>
-                      {getLeaveStatus(leave.start_date, leave.end_date)}
-                    </span>
-                  </td>
-                </tr>
-              )) : <tr><td colSpan={7} className="px-4 py-6 text-center font-bold">No Leaves Found</td></tr>}
-            </tbody>
-          </table>
-        </div>
-        </>
-       }
+            <Table
+              columns={columns}
+              dataSource={leaves}
+              rowKey="id"
+              bordered
+            />
+          </>
+        )}
 
-        {showCreateForm && (
+        {(showCreateForm && !leaveEdit) && (
           <CreateLeave onClose={() => {
             setShowCreateForm(false);
-            fetchLeaves(); // Refresh leaves list after creation
+            fetchLeaves();
           }} />
         )}
 
+        {
+          (leaveEdit && !showCreateForm) && 
+          <EditLeave leave={leaveEdit} onUpdate={()=>{setLeaveEdit(null);fetchLeaves()}} onClose={()=> setLeaveEdit(null)}  />
+        }
       </div>
     </Layout>
   );

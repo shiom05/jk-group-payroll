@@ -78,7 +78,7 @@ class LeaveController extends Controller
      */
     public function update(UpdateLeaveRequest $request, Leave $leave)
     {
-        $request->validate([
+        $validated = $request->validate([
             'security_id' => 'required|exists:securities,securityId',
             'leave_type' => 'required|in:Annual,Sick,Casual',
             'reason' => 'required|string',
@@ -86,9 +86,13 @@ class LeaveController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
         ]);
-
-        $leave = Leave::findOrFail($leave_id);
-        $leave->update($request->all());
+    
+        $leave->update($validated);
+    
+        return response()->json([
+            'message' => 'Leave updated successfully.',
+            'leave' => $leave,
+        ]);
 
         // Update the leave balance
         // $this->updateLeaveBalance($leave);
@@ -99,8 +103,8 @@ class LeaveController extends Controller
      */
     public function destroy(Leave $leave)
     {
-        $leave = Leave::findOrFail($leave_id);
         $leave->delete();
+        return response()->json(['message' => 'leave deleted']);
 
     }
 

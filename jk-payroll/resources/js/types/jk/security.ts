@@ -10,7 +10,7 @@ export default interface Security {
     securityPoliceReportUploaded: boolean;
     securityBirthCertificateUploaded: boolean;
     securityGramasewakaLetterUploaded: boolean;
-    securityStatus: 'active' | 'pending' | 'exemployee' | 'inactive'; // Union type
+    securityStatus:number// Union type
     securityDateOfJoin: string | Date; // Can be either string or Date object
 
     securityPermanentAddress: string;
