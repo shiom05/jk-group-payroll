@@ -1,59 +1,51 @@
 
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { getLocation } from '@/services/location.service';
 
-interface Location {
-    id: string;
-    locationName: string;
-    locationType: string;
-    address: string;
-    oicRate: string;
-    sargentRate: string;
-    costapalRate: string;
+interface Locations {
+  locationId: any,
+  locationName: string;
+  locationType: string;
+  address: string;
+  isJkPropLocation: boolean;
+
+  billing_OIC_HourlyRate: number;
+  billing_JSO_HourlyRate: number;
+  billing_CSO_HourlyRate: number;
+  billing_LSO_HourlyRate: number;
+
+  paying_OIC_HourlyRate: number;
+  paying_JSO_HourlyRate: number;
+  paying_CSO_HourlyRate: number;
+  paying_LSO_HourlyRate: number;
 }
 
 interface SelectLocationProps {
-    onSelected: (location: Location) => void;
+    onSelected: (location: Locations) => void;
+    selectedLocation: Locations
 }
 
-const SelectLocation = ({onSelected}: SelectLocationProps) => {
+const SelectLocation = ({onSelected, selectedLocation}: SelectLocationProps) => {
 
-    const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [locations, setLocations] = useState<Locations[]>([]);
   
-    // Sample data - replace with your actual data source
-    const locations: Location[] = [
-      {
-        id: '1',
-        locationName: 'Downtown Office',
-        locationType: 'Office',
-        address: '123 Main St, City',
-        oicRate: '45.00',
-        sargentRate: '50.00',
-        costapalRate: '40.00'
-      },
-      {
-        id: '2',
-        locationName: 'North Warehouse',
-        locationType: 'Warehouse',
-        address: '500 Industrial Ave',
-        oicRate: '35.00',
-        sargentRate: '42.00',
-        costapalRate: '32.00'
-      },
-      {
-        id: '3',
-        locationName: 'Riverside Mall',
-        locationType: 'Retail',
-        address: '88 Commerce Blvd',
-        oicRate: '55.00',
-        sargentRate: '60.00',
-        costapalRate: '48.00'
-      }
-    ];
+
+     const fetchLocations = async()=>{
+            const result = await getLocation();
+            setLocations(result.data);
+        }
+    
+        useEffect(()=>{
+            fetchLocations();
+            setSelectedRowKeys([selectedLocation?.locationId])
+        },[])
+    
   
-    const columns: ColumnsType<Location> = [
+    const columns: ColumnsType<Locations> = [
       {
         title: 'Location Name',
         dataIndex: 'locationName',
@@ -89,26 +81,16 @@ const SelectLocation = ({onSelected}: SelectLocationProps) => {
         dataIndex: 'address',
         key: 'address',
         ellipsis: true
-      },
-      {
-        title: 'OIC Rate (LKR)',
-        dataIndex: 'oicRate',
-        key: 'oicRate',
-        align: 'right',
-        render: (rate) => `LKR ${rate}/hr`
-      },
-      {
-        title: 'Sargent Rate (LKR)',
-        dataIndex: 'sargentRate',
-        key: 'sargentRate',
-        align: 'right',
-        render: (rate) => `LKR ${rate}/hr`
       }
     ];
   
-    const onSelectChange = (rowId: any, location: Location[]) => {
+    const onSelectChange = (rowId: any, location: Locations[]) => {
+      console.log(rowId)
+      console.log(location)
       setSelectedRowKeys(rowId);
-      onSelected(location[0])
+      const selected =  location.filter((row:Locations) => row.locationId === rowId[0] );
+      console.log(selected)
+      onSelected(selected[0]);
     };
   
     const rowSelection = {
@@ -124,7 +106,7 @@ const SelectLocation = ({onSelected}: SelectLocationProps) => {
     return (
       <div>
         <Table
-          rowKey="id"
+          rowKey="locationId"
           rowSelection={{
             type: 'radio',
             ...rowSelection,
@@ -132,10 +114,10 @@ const SelectLocation = ({onSelected}: SelectLocationProps) => {
           columns={columns}
           dataSource={locations}
           pagination={{ pageSize: 5 }}
-          onRow={(record) => ({
+          onRow={(record: any) => ({
             onClick: () => {
               onSelected(record);
-              setSelectedRowKeys([record.id]);
+              setSelectedRowKeys([record]);
               
             },
           })}

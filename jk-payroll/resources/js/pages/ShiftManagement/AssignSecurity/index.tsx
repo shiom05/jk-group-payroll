@@ -34,7 +34,7 @@ const AsignSecuirty = () => {
     const steps = [
         {
             title: 'Select Location',
-            content: <SelectLocation onSelected={handleSelectLocation} />,
+            content: <SelectLocation onSelected={handleSelectLocation}  selectedLocation={selectedLocation} />,
         },
         {
             title: 'Select Security',
@@ -61,58 +61,99 @@ const AsignSecuirty = () => {
     return (
         <div className="p-5">
         
-           <div className='pb-10 flex gap-x-6'>
+           <div className='pb-10 flex w-full! gap-x-6'>
 
-           <div>
+           <div className='w-1/2'>
                 {selectedLocation && (
-                    <div className="max-w-sm overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
-                        <div className="border-b border-gray-200 bg-blue-50 px-4 py-3">
-                            <h3 className="text-lg font-semibold text-green-800" id="location-name">
-                                SELECTED LOCATION
-                            </h3>
-                            <h4 className="text-md font-semibold text-gray-800" id="location-name">
-                                {selectedLocation.locationName}
-                            </h4>
-                            <p className="text-sm text-blue-600" id="location-type">
-                                {selectedLocation.locationType}
-                            </p>
-                        </div>
-
-                        <div className="p-4">
-                            <div className="mb-4">
-                                <h4 className="text-xs font-medium tracking-wider text-gray-500 uppercase">Address</h4>
-                                <p className="mt-1 whitespace-pre-line text-gray-700" id="location-address">
-                                {selectedLocation.address}
-                                </p>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="rounded border border-blue-100 bg-blue-50 p-2">
-                                    <p className="text-xs font-medium text-blue-600">OIC Rate</p>
-                                    <p className="text-lg font-bold text-blue-800">
-                                        <span id="oic-rate">{selectedLocation.oicRate}</span>
-                                        <span className="text-xs font-normal">LKR/hr</span>
-                                    </p>
-                                </div>
-
-                                <div className="rounded border border-green-100 bg-green-50 p-2">
-                                    <p className="text-xs font-medium text-green-600">Sargent Rate</p>
-                                    <p className="text-lg font-bold text-green-800">
-                                        <span id="sargent-rate">{selectedLocation.sargentRate}</span>
-                                        <span className="text-xs font-normal">LKR/hr</span>
-                                    </p>
-                                </div>
-
-                                <div className="rounded border border-purple-100 bg-purple-50 p-2">
-                                    <p className="text-xs font-medium text-purple-600">Costapal Rate</p>
-                                    <p className="text-lg font-bold text-purple-800">
-                                        <span id="costapal-rate"> {selectedLocation.costapalRate}</span>
-                                        <span className="text-xs font-normal">LKR/hr</span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
+                    <div className="border-b border-gray-200 bg-blue-50 px-4 py-3">
+                      <h3 className="text-lg font-semibold text-green-800">
+                        SELECTED LOCATION
+                      </h3>
+                      <h4 className="text-md font-semibold text-gray-800">
+                        {selectedLocation.locationName}
+                      </h4>
+                      <p className="text-sm text-blue-600">
+                        {selectedLocation.locationType}
+                        {selectedLocation.isJkPropLocation && (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                            JK Property
+                          </span>
+                        )}
+                      </p>
                     </div>
+                  
+                    <div className="p-4">
+                      <div className="mb-4">
+                        <h4 className="text-xs font-medium tracking-wider text-gray-500 uppercase">Address</h4>
+                        <p className="mt-1 whitespace-pre-line text-gray-700">
+                          {selectedLocation.address}
+                        </p>
+                      </div>
+                  
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-xs font-medium tracking-wider text-gray-500 uppercase mb-2">Billing Rates (LKR/hr)</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded border border-blue-100 bg-blue-50 p-2">
+                              <p className="text-xs font-medium text-blue-600">OIC</p>
+                              <p className="text-lg font-bold text-blue-800">
+                                {selectedLocation.billing_OIC_HourlyRate.toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="rounded border border-green-100 bg-green-50 p-2">
+                              <p className="text-xs font-medium text-green-600">JSO</p>
+                              <p className="text-lg font-bold text-green-800">
+                                {selectedLocation.billing_JSO_HourlyRate.toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="rounded border border-purple-100 bg-purple-50 p-2">
+                              <p className="text-xs font-medium text-purple-600">CSO</p>
+                              <p className="text-lg font-bold text-purple-800">
+                                {selectedLocation.billing_CSO_HourlyRate.toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="rounded border border-amber-100 bg-amber-50 p-2">
+                              <p className="text-xs font-medium text-amber-600">LSO</p>
+                              <p className="text-lg font-bold text-amber-800">
+                                {selectedLocation.billing_LSO_HourlyRate.toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                  
+                        <div>
+                          <h4 className="text-xs font-medium tracking-wider text-gray-500 uppercase mb-2">Paying Rates (LKR/hr)</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded border border-blue-100 bg-blue-50 p-2">
+                              <p className="text-xs font-medium text-blue-600">OIC</p>
+                              <p className="text-lg font-bold text-blue-800">
+                                {selectedLocation.paying_OIC_HourlyRate.toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="rounded border border-green-100 bg-green-50 p-2">
+                              <p className="text-xs font-medium text-green-600">JSO</p>
+                              <p className="text-lg font-bold text-green-800">
+                                {selectedLocation.paying_JSO_HourlyRate.toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="rounded border border-purple-100 bg-purple-50 p-2">
+                              <p className="text-xs font-medium text-purple-600">CSO</p>
+                              <p className="text-lg font-bold text-purple-800">
+                                {selectedLocation.paying_CSO_HourlyRate.toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="rounded border border-amber-100 bg-amber-50 p-2">
+                              <p className="text-xs font-medium text-amber-600">LSO</p>
+                              <p className="text-lg font-bold text-amber-800">
+                                {selectedLocation.paying_LSO_HourlyRate.toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
            </div>
 
