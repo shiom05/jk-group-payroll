@@ -11,6 +11,7 @@ use App\Http\Controllers\InventoryTransactionController;
 use App\Http\Controllers\SecurityAssetController;
 use App\Http\Controllers\SecurityExpensesController;
 use App\Http\Controllers\SecurityLoansController;
+use App\Http\Controllers\LocationsController;
 
 Route::apiResource('api/securities', SecurityController::class)->withoutMiddleware(['auth:api']);
 // Route::apiResource('api/bank-details', BankDetailController::class)->withoutMiddleware(['auth:api']);
@@ -78,7 +79,19 @@ Route::prefix('api/loans')->group(function () {
     Route::get('/security/{securityId}/current-month/payroll', [SecurityLoansController::class, 'getLoansForPayroll']);
 });
 
-
+Route::prefix('api/locations')->group(function () {
+    Route::get('/', [LocationsController::class, 'index']);
+    
+    // Create a new location (POST /api/locations)
+    Route::post('/', [LocationsController::class, 'store']);
+    
+    // Update a location (PUT/PATCH /api/locations/{id})
+    Route::put('/{location}', [LocationsController::class, 'update']);
+    Route::patch('/{location}', [LocationsController::class, 'update']);
+    
+    // Delete a location (DELETE /api/locations/{id})
+    Route::delete('/{location}', [LocationsController::class, 'destroy']);
+});
 
 
 

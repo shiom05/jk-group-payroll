@@ -1,134 +1,115 @@
-import { useState } from 'react';
+import { saveLocation } from '@/services/location.service';
+import { Button, Checkbox, Col, Form, Input, InputNumber, Row } from 'antd';
 
-const CreateLocation = () => {
-    const [showCreate, setShowCreate] = useState<boolean>(false);
-    const [formData, setFormData] = useState({
-        locationName: '',
-        locationType: '',
-        address: '',
-        oicRate: '',
-        sargentRate: '',
-        costapalRate: '',
-    });
+const CreateLocation = ({ handleCancel }: { handleCancel: () => void }) => {
+    const [form] = Form.useForm();
 
-    const handleChange = (e: any) => {
-        const { name, value } = e.target;
-        // setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleSubmit = (e: any) => {
-        e.preventDefault();
-        setFormData({
-            locationName: '',
-            locationType: '',
-            address: '',
-            oicRate: '',
-            sargentRate: '',
-            costapalRate: '',
-        });
-        setShowCreate(false)
+    const handleSubmit = async(values: any) => {
+        console.log(values);
+        const result = await saveLocation(values);
+        console.log(result);
+        if(result.data.success){
+            setTimeout(()=>{
+                handleCancel();
+            },2000)
+        }
     };
 
     return (
         <>
-            <button
-                onClick={() => setShowCreate(true)}
-                className="mb-10 cursor-pointer! rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-md transition hover:bg-blue-700"
-            >
-                + Add New Location
-            </button>
+            <Form form={form} onFinish={handleSubmit} layout="vertical" className="max-w mb-10! space-y-4 rounded-lg bg-white p-6! py-10! shadow-lg">
+                <h2 className="mb-4 text-2xl font-semibold text-gray-700">Location Form</h2>
 
-            {showCreate && (
-                <form onSubmit={handleSubmit} className="max-w mb-10 space-y-4 rounded-lg bg-white p-6 py-10 shadow-lg">
-                    <h2 className="mb-4 text-2xl font-semibold text-gray-700">Location Form</h2>
+                <Row gutter={16}>
+                    <Col span={8}>
+                        <Form.Item name="locationName" label="Location Name" rules={[{ required: true, message: 'Please enter location name' }]}>
+                            <Input placeholder="Location Name" />
+                        </Form.Item>
+                    </Col>
 
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Location Name:</label>
-                            <input
-                                type="text"
-                                name="locationName"
-                                value={formData.locationName}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                    <Col span={8}>
+                        <Form.Item name="locationType" label="Location Type" rules={[{ required: true, message: 'Please enter location type' }]}>
+                            <Input placeholder="Location Type" />
+                        </Form.Item>
+                    </Col>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Location Type:</label>
-                            <input
-                                type="text"
-                                name="locationType"
-                                value={formData.locationType}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                    <Col span={8}>
+                        <Form.Item name="isJkPropLocation" initialValue={false}  valuePropName="checked">
+                            <Checkbox>JK Property Location</Checkbox>
+                        </Form.Item>
+                    </Col>
+                </Row>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">OIC Hourly Rate (LKR):</label>
-                            <input
-                                type="number"
-                                name="oicRate"
-                                value={formData.oicRate}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                <Form.Item name="address" label="Address" rules={[{ required: true, message: 'Please enter address' }]}>
+                    <Input.TextArea rows={3} placeholder="Full Address" />
+                </Form.Item>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Sargent Hourly Rate (LKR):</label>
-                            <input
-                                type="number"
-                                name="sargentRate"
-                                value={formData.sargentRate}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                <h3 className="mb-2 text-lg font-medium text-gray-700">Billing Rates (LKR)</h3>
+                <Row gutter={16}>
+                    <Col span={6}>
+                        <Form.Item name="billing_OIC_HourlyRate" label="OIC Hourly Rate">
+                            <InputNumber className="w-full" min={0} />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                        <Form.Item name="billing_JSO_HourlyRate" label="JSO Hourly Rate">
+                            <InputNumber className="w-full" min={0} />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                        <Form.Item name="billing_CSO_HourlyRate" label="CSO Hourly Rate">
+                            <InputNumber className="w-full" min={0} />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                        <Form.Item name="billing_LSO_HourlyRate" label="LSO Hourly Rate">
+                            <InputNumber className="w-full" min={0} />
+                        </Form.Item>
+                    </Col>
+                </Row>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Costapal Hourly Rate (LKR):</label>
-                            <input
-                                type="number"
-                                name="costapalRate"
-                                value={formData.costapalRate}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                <h3 className="mb-2 text-lg font-medium text-gray-700">Paying Rates (LKR)</h3>
+                <Row gutter={16}>
+                    <Col span={6}>
+                        <Form.Item name="paying_OIC_HourlyRate" label="OIC Hourly Rate">
+                            <InputNumber className="w-full" min={0} />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                        <Form.Item name="paying_JSO_HourlyRate" label="JSO Hourly Rate">
+                            <InputNumber className="w-full" min={0} />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                        <Form.Item name="paying_CSO_HourlyRate" label="CSO Hourly Rate">
+                            <InputNumber className="w-full" min={0} />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                        <Form.Item name="paying_LSO_HourlyRate" label="LSO Hourly Rate">
+                            <InputNumber className="w-full" min={0} />
+                        </Form.Item>
+                    </Col>
+                </Row>
 
-                        <div className="col-span-3">
-                            <label className="block text-sm font-medium text-gray-700">Address:</label>
-                            <textarea
-                                name="address"
-                                value={formData.address}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
-                    </div>
-
+                <Form.Item>
                     <div className="flex flex-row gap-x-4">
-                        <button
-                            type="button"
-                            onClick={() => setShowCreate(false)}
-                            className="mt-4 w-1/4 cursor-pointer rounded-md bg-red-600 px-4 py-2 text-white shadow-md transition hover:bg-red-700"
+                        <Button
+                            type="default"
+                            onClick={() => {
+                                form.resetFields();
+                                handleCancel();
+                            }}
+                            className="mt-4 w-1/4 bg-red-600 text-white hover:bg-red-700"
                         >
                             Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="mt-4 w-1/4 cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-white shadow-md transition hover:bg-blue-700"
-                        >
+                        </Button>
+                        <Button type="primary" htmlType="submit" className="mt-4 w-1/4 bg-blue-600 text-white hover:bg-blue-700">
                             Save
-                        </button>
+                        </Button>
                     </div>
-                </form>
-            )}
+                </Form.Item>
+            </Form>
         </>
     );
 };

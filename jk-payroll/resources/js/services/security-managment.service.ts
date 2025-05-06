@@ -104,3 +104,5 @@ export const getSecurityCurrentMonthPayrollLoans = (securityId:any)=>{
     return axios.get(`/api/loans/security/${securityId}/current-month/payroll}`)
 }
 
+
+

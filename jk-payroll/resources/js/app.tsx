@@ -24,7 +24,7 @@ createInertiaApp({
 //npm run install
 //npm run build
 //composer run dev
-//php artisan make:model SecurityExpenses  -a 
+//php artisan make:model Locations  -a 
 //php artisan route:list
 
 ///php artisan make:model SecurityAsset -a 
