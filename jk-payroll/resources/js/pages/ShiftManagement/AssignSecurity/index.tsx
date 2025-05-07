@@ -2,10 +2,16 @@ import { Button, message, Steps, theme, Image } from 'antd';
 import React, { useState } from 'react';
 import SelectLocation from './SelectLocation';
 import SelectSecurity from './SelectSecurity';
+import Confirm from './Confirm';
+import Security from '@/types/jk/security';
+import Location from '@/types/jk/location';
 
+interface AsignSecuirtyProps{
+  securities: Security[],
+  locations: Location[]
+}
 
-
-const AsignSecuirty = () => {
+const AsignSecuirty = ({securities, locations}:AsignSecuirtyProps) => {
     
 
     const { token } = theme.useToken();
@@ -34,15 +40,15 @@ const AsignSecuirty = () => {
     const steps = [
         {
             title: 'Select Location',
-            content: <SelectLocation onSelected={handleSelectLocation}  selectedLocation={selectedLocation} />,
+            content: <SelectLocation onSelected={handleSelectLocation} locations={locations} selectedLocation={selectedLocation} />,
         },
         {
             title: 'Select Security',
-            content: <SelectSecurity selectedSecurity={selectedSecurity} onSelected={handleSelectSecuirty} />,
+            content: <SelectSecurity selectedSecurity={selectedSecurity} securityList={securities} onSelected={handleSelectSecuirty} />,
         },
         {
             title: 'Complete Assign',
-            content: 'Last-content',
+            content: <Confirm  selectedLocation={selectedLocation} selectedSecurity={selectedSecurity}  />,
         },
     ];
     const items = steps.map((item) => ({ key: item.title, title: item.title }));
@@ -152,6 +158,7 @@ const AsignSecuirty = () => {
                           </div>
                         </div>
                       </div>
+                      
                     </div>
                   </div>
                 )}
@@ -198,7 +205,7 @@ const AsignSecuirty = () => {
             <div style={contentStyle}>{steps[current].content}</div>
             <div style={{ marginTop: 24 }}>
                 {current < steps.length - 1 && (
-                    <Button disabled={selectedLocation === null} type="primary" onClick={() => next()}>
+                    <Button disabled={(selectedLocation === null && current===0) || (selectedSecurity === null && current===1)} type="primary" onClick={() => next()}>
                         Next
                     </Button>
                 )}

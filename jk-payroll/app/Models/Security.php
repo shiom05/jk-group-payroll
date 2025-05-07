@@ -71,6 +71,11 @@ class Security extends Model
         'securityStatus' => 'integer',
     ];
 
+    public function locations()
+    {
+        return $this->belongsToMany(Locations::class, 'security_location_allocations', 'security_id', 'location_id');
+    }
+
     // Add this method to get status text
 public function getStatusTextAttribute()
 {

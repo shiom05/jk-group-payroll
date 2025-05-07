@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,10 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import Layout from '@/layouts/Layout';
 import ManageLocations from './Locations/ManageLocations';
 import AssignSecurity from './AssignSecurity';
-
+import Location from '@/types/jk/location';
+import { getLocation } from '@/services/location.service';
+import Security from '@/types/jk/security';
+import axios from 'axios';
 
 export default function ShiftManagement() {
   const [view, setView] = useState('locations');
@@ -16,6 +19,30 @@ export default function ShiftManagement() {
   const locationTypes = ['Warehouse', 'Shop', 'House', 'Land'];
   const roleTypes = ['OIC', 'Sargent', 'Costapal'];
 
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [securityList, setSecurityList]= useState<Security[]>([]);
+
+    
+   const fetchLocations = async()=>{
+      const result = await getLocation();
+      setLocations(result.data);
+   }
+
+   const fetchSecurities = async () => {
+    try {
+        const response = await axios.get('/api/securities');
+        setSecurityList(response.data);
+    } catch (error) {
+        console.error('Error fetching securities:', error);
+    }
+    };
+
+    useEffect(()=>{
+        fetchLocations();
+        fetchSecurities();
+    },[]);
+      
+    
   return (
       <Layout>
           <div className="p-6">
@@ -59,7 +86,7 @@ export default function ShiftManagement() {
               {view === 'locations' && <ManageLocations></ManageLocations>}
 
               {view === 'assignments' && (
-                <AssignSecurity></AssignSecurity>
+                <AssignSecurity securities={securityList} locations={locations}></AssignSecurity>
               )}
 
               {view === 'logs' && (

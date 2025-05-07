@@ -11,7 +11,10 @@ class LocationsController extends Controller
 
     public function index()
     {
-        return Locations::all();
+        // return Locations::with('securities')->get();
+        return Locations::with(['securities' => function ($query) {
+            $query->select('securityId', 'securityName', 'securityType');
+        }])->get();
     }
 
     public function store(StoreLocationsRequest $request)

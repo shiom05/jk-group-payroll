@@ -3,36 +3,19 @@ import { Table, Tag, Image } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 import axios from 'axios';
-
-interface Security {
-  securityName: string;
-  securityStatus: number;
-  securityId: string;
-  securityPhoto: string;
-}
+import Security from '@/types/jk/security';
 
 interface SelectSecurityProps {
   onSelected: (security: Security) => void;
   selectedSecurity: Security
+  securityList: Security[];
 }
 
-const SelectSecurity = ({ onSelected, selectedSecurity }: SelectSecurityProps) => {
+const SelectSecurity = ({ onSelected, selectedSecurity, securityList }: SelectSecurityProps) => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [securityList, setSecurityList]= useState<any>([]);
-
-
-  const fetchSecurities = async () => {
-    try {
-        const response = await axios.get('/api/securities');
-        setSecurityList(response.data);
-    } catch (error) {
-        console.error('Error fetching securities:', error);
-    }
-};
 
 
 useEffect(() => {
-    fetchSecurities();
     setSelectedRowKeys([selectedSecurity?.securityId])
 }, []);
 
@@ -124,7 +107,7 @@ useEffect(() => {
         columns={columns}
         dataSource={securityList}
         pagination={{ pageSize: 5 }}
-        onRow={(record) => ({
+        onRow={(record: Security) => ({
           onClick: () => {
             if (record.securityStatus !== 300) {
             onSelected(record);

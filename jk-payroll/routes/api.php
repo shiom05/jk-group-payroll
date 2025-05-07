@@ -12,6 +12,7 @@ use App\Http\Controllers\SecurityAssetController;
 use App\Http\Controllers\SecurityExpensesController;
 use App\Http\Controllers\SecurityLoansController;
 use App\Http\Controllers\LocationsController;
+use App\Http\Controllers\SecurityLocationAllocationController;
 
 Route::apiResource('api/securities', SecurityController::class)->withoutMiddleware(['auth:api']);
 // Route::apiResource('api/bank-details', BankDetailController::class)->withoutMiddleware(['auth:api']);
@@ -91,6 +92,17 @@ Route::prefix('api/locations')->group(function () {
     
     // Delete a location (DELETE /api/locations/{id})
     Route::delete('/{location}', [LocationsController::class, 'destroy']);
+});
+
+
+Route::prefix('api/locations-allocations')->group(function () {
+    Route::get('/', [SecurityLocationAllocationController::class, 'index']);
+    
+    Route::post('/allocate-security', [SecurityLocationAllocationController::class, 'store']); // Assign security to location
+    Route::delete('/remove-allocation/{securityId}/{locationId}', [SecurityLocationAllocationController::class, 'destroy']); // Unassign security from location
+    // Routes to fetch allocated locations and securities
+    Route::get('/security/{securityId}/locations', [SecurityLocationAllocationController::class, 'getAllocatedLocationsToSecurity']);  // Get all locations assigned to a security
+    Route::get('/location/{locationId}/securities', [SecurityLocationAllocationController::class, 'getAllocatedSecuritiesToLocation']);  // Get all securities assigned to a location
 });
 
 

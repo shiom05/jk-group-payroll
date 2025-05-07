@@ -33,6 +33,11 @@ class Locations extends Model
         'isJkPropLocation' => 'boolean', // Ensures boolean type
     ];
 
+    public function securities()
+    {
+        return $this->belongsToMany(Security::class, 'security_location_allocations', 'location_id', 'security_id');
+    }
+
     protected static function boot()
     {
         parent::boot();

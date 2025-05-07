@@ -25,22 +25,23 @@ interface Locations {
 
 interface SelectLocationProps {
     onSelected: (location: Locations) => void;
-    selectedLocation: Locations
+    selectedLocation: Locations;
+    locations: Locations[]
 }
 
-const SelectLocation = ({onSelected, selectedLocation}: SelectLocationProps) => {
+const SelectLocation = ({onSelected, selectedLocation, locations}: SelectLocationProps) => {
 
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [locations, setLocations] = useState<Locations[]>([]);
+  // const [locations, setLocations] = useState<Locations[]>([]);
   
 
-     const fetchLocations = async()=>{
-            const result = await getLocation();
-            setLocations(result.data);
-        }
+  //    const fetchLocations = async()=>{
+  //           const result = await getLocation();
+  //           setLocations(result.data);
+  //       }
     
         useEffect(()=>{
-            fetchLocations();
+            // fetchLocations();
             setSelectedRowKeys([selectedLocation?.locationId])
         },[])
     
@@ -85,6 +86,7 @@ const SelectLocation = ({onSelected, selectedLocation}: SelectLocationProps) => 
     ];
   
     const onSelectChange = (rowId: any, location: Locations[]) => {
+     
       console.log(rowId)
       console.log(location)
       setSelectedRowKeys(rowId);
@@ -114,10 +116,11 @@ const SelectLocation = ({onSelected, selectedLocation}: SelectLocationProps) => 
           columns={columns}
           dataSource={locations}
           pagination={{ pageSize: 5 }}
-          onRow={(record: any) => ({
+          onRow={(record: Locations) => ({
             onClick: () => {
+              console.log(record)
               onSelected(record);
-              setSelectedRowKeys([record]);
+              setSelectedRowKeys([record.locationId]);
               
             },
           })}

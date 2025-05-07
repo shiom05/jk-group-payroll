@@ -1,10 +1,12 @@
 import { DeleteFilled, EditOutlined, EyeOutlined } from '@ant-design/icons';
-import { Button, Col, Divider, Modal, Row, Space, Table, Tag, Typography } from 'antd';
+import { Button, Col, Divider, Modal, Popconfirm, Row, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useEffect, useState } from 'react';
 import CreateLocation from './CreateLocation';
 import EditLocation from './EditLocation';
 import { deleteLocation, getLocation } from '@/services/location.service';
+import Security from '@/types/jk/security';
+import { removeSecurityFromLocation } from '@/services/securityLocationAllocation.service';
 const { Title, Text } = Typography;
 interface Locations {
     locationId: any,
@@ -22,6 +24,8 @@ interface Locations {
     paying_JSO_HourlyRate: number;
     paying_CSO_HourlyRate: number;
     paying_LSO_HourlyRate: number;
+
+    securities: Security[]
 }
 
 export default function ManageLocations() {
@@ -121,12 +125,54 @@ export default function ManageLocations() {
 
     const fetchLocations = async()=>{
         const result = await getLocation();
+        console.log(result)
         setLocations(result.data);
     }
 
+    const onRemove = async(security:string)=>{
+        console.log(security, viewLocation?.locationId)
+        const result = await removeSecurityFromLocation(security, viewLocation?.locationId);
+        console.log(result);
+        fetchLocations();
+        setIsModalOpen(false);
+
+    }
+
     useEffect(()=>{
-        fetchLocations()
-    },[])
+        fetchLocations();
+    },[]);
+
+        const columnsAllocatedSecurity: ColumnsType<any> = [
+          {
+            title: 'ID',
+            dataIndex: 'securityId',
+            key: 'securityId',
+          },
+          {
+            title: 'Name',
+            dataIndex: 'securityName',
+            key: 'securityName',
+          },
+          {
+            title: 'Type',
+            dataIndex: 'securityType',
+            key: 'securityType',
+          },
+          {
+            title: 'Action',
+            key: 'action',
+            render: (_, record) => (
+              <Popconfirm
+                title="Remove this security?"
+                onConfirm={() => onRemove(record.securityId)}
+                okText="Yes"
+                cancelText="No"
+              >
+                <Button danger>Remove</Button>
+              </Popconfirm>
+            ),
+          },
+        ];
 
     return (
         <div className="rounded-2xl bg-gray-100 p-10 pt-10 pb-10 shadow-md">
@@ -153,6 +199,7 @@ export default function ManageLocations() {
                         onOk={handleOk}
                         onClose={handleCancel}
                         onCancel={handleCancel}
+                        width={1000}
                         footer={(_, { OkBtn }) => (
                             <>
                                 <OkBtn />
@@ -218,6 +265,10 @@ export default function ManageLocations() {
                                 </Col>
                             </Row>
                         </Typography>
+                        <Divider />
+                        <Title level={5}>Allocated Securities</Title>
+
+                        <Table rowKey="securityId" columns={columnsAllocatedSecurity} dataSource={viewLocation ? viewLocation.securities : []} pagination={false} />
                         <Divider />
                     </Modal>
                 </>
