@@ -1,5 +1,9 @@
 import axios from 'axios';
 
+export const getAllSecurities = ()=>{
+    return axios.get(`/api/securities`);
+}
+
 export const getBankDetails = (id: string)=>{
     return axios.get(`/api/bank-details/${id}`);
 }

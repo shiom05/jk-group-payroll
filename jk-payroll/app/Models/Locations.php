@@ -23,10 +23,12 @@ class Locations extends Model
         'billing_JSO_HourlyRate',
         'billing_CSO_HourlyRate',
         'billing_LSO_HourlyRate',
+        'billing_SSO_HourlyRate',
         'paying_OIC_HourlyRate',
         'paying_JSO_HourlyRate',
         'paying_CSO_HourlyRate',
         'paying_LSO_HourlyRate',
+        'paying_SSO_HourlyRate',
     ];
 
     protected $casts = [

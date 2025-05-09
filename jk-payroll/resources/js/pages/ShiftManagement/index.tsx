@@ -12,6 +12,7 @@ import Location from '@/types/jk/location';
 import { getLocation } from '@/services/location.service';
 import Security from '@/types/jk/security';
 import axios from 'axios';
+import SecurityShiftLogManager from './LogShift/logshift';
 
 export default function ShiftManagement() {
   const [view, setView] = useState('locations');
@@ -90,45 +91,7 @@ export default function ShiftManagement() {
               )}
 
               {view === 'logs' && (
-                  <Card className="mb-6">
-                      <CardContent className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-                          <div>
-                              <Label>Location</Label>
-                              <Select>
-                                  <SelectTrigger>
-                                      <SelectValue placeholder="Select Location" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                      <SelectItem value="loc1">ABC Warehouse</SelectItem>
-                                      <SelectItem value="loc2">XYZ Shop</SelectItem>
-                                  </SelectContent>
-                              </Select>
-                          </div>
-                          <div>
-                              <Label>Security</Label>
-                              <Select>
-                                  <SelectTrigger>
-                                      <SelectValue placeholder="Select Security" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                      <SelectItem value="sec1">John Doe</SelectItem>
-                                      <SelectItem value="sec2">Jane Smith</SelectItem>
-                                  </SelectContent>
-                              </Select>
-                          </div>
-                          <div>
-                              <Label>Shift Start</Label>
-                              <Input type="datetime-local" />
-                          </div>
-                          <div>
-                              <Label>Shift End</Label>
-                              <Input type="datetime-local" />
-                          </div>
-                          <div className="col-span-full">
-                              <Button>Log Shift</Button>
-                          </div>
-                      </CardContent>
-                  </Card>
+                <SecurityShiftLogManager />
               )}
           </div>
       </Layout>

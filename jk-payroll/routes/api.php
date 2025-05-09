@@ -14,6 +14,8 @@ use App\Http\Controllers\SecurityLoansController;
 use App\Http\Controllers\LocationsController;
 use App\Http\Controllers\SecurityLocationAllocationController;
 
+use App\Http\Controllers\SecurityShiftLogController;
+
 Route::apiResource('api/securities', SecurityController::class)->withoutMiddleware(['auth:api']);
 // Route::apiResource('api/bank-details', BankDetailController::class)->withoutMiddleware(['auth:api']);
 
@@ -106,4 +108,15 @@ Route::prefix('api/locations-allocations')->group(function () {
 });
 
 
+Route::prefix('api/log-shift')->group(function () {
+    Route::get('/', [SecurityShiftLogController::class, 'index']); // Get all shifts
+
+    Route::get('/security/{securityId}', [SecurityShiftLogController::class, 'getBySecurityId']); // Get shifts by security ID
+    Route::get('/location/{locationId}', [SecurityShiftLogController::class, 'getByLocationId']); // Get shifts by location ID
+    Route::get('/security/{securityId}/current-month', [SecurityShiftLogController::class, 'getCurrentMonthShiftsForSecurity']); // Get current month's shifts for a security
+
+    Route::post('/create', [SecurityShiftLogController::class, 'store']); // Create a new shift
+    Route::put('/update/{id}', [SecurityShiftLogController::class, 'update']); // Update a shift
+    Route::delete('/delete/{id}', [SecurityShiftLogController::class, 'destroy']); // Delete a shift
+});
 

@@ -28,10 +28,13 @@ class LocationsController extends Controller
             'billing_JSO_HourlyRate' => 'required|numeric',
             'billing_CSO_HourlyRate' => 'required|numeric',
             'billing_LSO_HourlyRate' => 'required|numeric',
+            'billing_SSO_HourlyRate' => 'required|numeric',
+            
             'paying_OIC_HourlyRate' => 'required|numeric',
             'paying_JSO_HourlyRate' => 'required|numeric',
             'paying_CSO_HourlyRate' => 'required|numeric',
             'paying_LSO_HourlyRate' => 'required|numeric',
+            'paying_SSO_HourlyRate' => 'required|numeric',
         ]);
 
         $newLocation = Locations::create($request->all());
@@ -54,10 +57,13 @@ class LocationsController extends Controller
             'billing_JSO_HourlyRate' => 'required|numeric',
             'billing_CSO_HourlyRate' => 'required|numeric',
             'billing_LSO_HourlyRate' => 'required|numeric',
+            'billing_SSO_HourlyRate' => 'required|numeric',//payment needed be get from customer for shift
+
             'paying_OIC_HourlyRate' => 'required|numeric',
             'paying_JSO_HourlyRate' => 'required|numeric',
             'paying_CSO_HourlyRate' => 'required|numeric',
             'paying_LSO_HourlyRate' => 'required|numeric',
+            'paying_SSO_HourlyRate' => 'required|numeric', //payment needed be made for security for shift
         ]);
     
         $location->update($validated);

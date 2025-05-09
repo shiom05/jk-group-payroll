@@ -19,11 +19,13 @@ interface Locations {
     billing_JSO_HourlyRate: number;
     billing_CSO_HourlyRate: number;
     billing_LSO_HourlyRate: number;
+    billing_SSO_HourlyRate: number;
 
     paying_OIC_HourlyRate: number;
     paying_JSO_HourlyRate: number;
     paying_CSO_HourlyRate: number;
     paying_LSO_HourlyRate: number;
+    paying_SSO_HourlyRate: number;
 
     securities: Security[]
 }
@@ -243,6 +245,9 @@ export default function ManageLocations() {
                                     <Text strong>CSO:</Text> <Text>LKR {viewLocation?.billing_CSO_HourlyRate}</Text>
                                 </Col>
                                 <Col span={6}>
+                                    <Text strong>SSO:</Text> <Text>LKR {viewLocation?.billing_SSO_HourlyRate}</Text>
+                                </Col>
+                                <Col span={6}>
                                     <Text strong>LSO:</Text> <Text>LKR {viewLocation?.billing_LSO_HourlyRate}</Text>
                                 </Col>
                             </Row>
@@ -259,6 +264,9 @@ export default function ManageLocations() {
                                 </Col>
                                 <Col span={6}>
                                     <Text strong>CSO:</Text> <Text>LKR {viewLocation?.paying_CSO_HourlyRate}</Text>
+                                </Col>
+                                <Col span={6}>
+                                    <Text strong>SSO:</Text> <Text>LKR {viewLocation?.paying_SSO_HourlyRate}</Text>
                                 </Col>
                                 <Col span={6}>
                                     <Text strong>LSO:</Text> <Text>LKR {viewLocation?.paying_LSO_HourlyRate}</Text>

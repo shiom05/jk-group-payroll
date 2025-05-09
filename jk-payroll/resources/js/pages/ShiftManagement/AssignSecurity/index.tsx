@@ -36,7 +36,7 @@ const AsignSecuirty = ({securities, locations}:AsignSecuirtyProps) => {
     const prev = () => {
         setCurrent(current - 1);
     };
-
+console.log(selectedLocation)
     const steps = [
         {
             title: 'Select Location',
@@ -119,6 +119,12 @@ const AsignSecuirty = ({securities, locations}:AsignSecuirtyProps) => {
                                 {selectedLocation.billing_CSO_HourlyRate.toLocaleString()}
                               </p>
                             </div>
+                            <div className="rounded border border-purple-100 bg-purple-50 p-2">
+                              <p className="text-xs font-medium text-purple-600">SSO</p>
+                              <p className="text-lg font-bold text-purple-800">
+                                {selectedLocation.billing_SSO_HourlyRate.toLocaleString()}
+                              </p>
+                            </div>
                             <div className="rounded border border-amber-100 bg-amber-50 p-2">
                               <p className="text-xs font-medium text-amber-600">LSO</p>
                               <p className="text-lg font-bold text-amber-800">
@@ -149,6 +155,14 @@ const AsignSecuirty = ({securities, locations}:AsignSecuirtyProps) => {
                                 {selectedLocation.paying_CSO_HourlyRate.toLocaleString()}
                               </p>
                             </div>
+
+                            <div className="rounded border border-purple-100 bg-purple-50 p-2">
+                              <p className="text-xs font-medium text-purple-600">SSO</p>
+                              <p className="text-lg font-bold text-purple-800">
+                                {selectedLocation.paying_SSO_HourlyRate.toLocaleString()}
+                              </p>
+                            </div>
+
                             <div className="rounded border border-amber-100 bg-amber-50 p-2">
                               <p className="text-xs font-medium text-amber-600">LSO</p>
                               <p className="text-lg font-bold text-amber-800">

@@ -13,11 +13,13 @@ interface Locations {
     billing_JSO_HourlyRate: number;
     billing_CSO_HourlyRate: number;
     billing_LSO_HourlyRate: number;
+    billing_SSO_HourlyRate: number;
 
     paying_OIC_HourlyRate: number;
     paying_JSO_HourlyRate: number;
     paying_CSO_HourlyRate: number;
     paying_LSO_HourlyRate: number;
+    paying_SSO_HourlyRate: number;
 }
 
 interface EditLocationProps {
@@ -98,6 +100,11 @@ const EditLocation = ({ initialValues, onCancel }: EditLocationProps) => {
                         </Form.Item>
                     </Col>
                     <Col span={6}>
+                        <Form.Item name="billing_SSO_HourlyRate" label="SSO Hourly Rate">
+                            <InputNumber className="w-full" min={0} />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
                         <Form.Item name="billing_LSO_HourlyRate" label="LSO Hourly Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
@@ -118,6 +125,11 @@ const EditLocation = ({ initialValues, onCancel }: EditLocationProps) => {
                     </Col>
                     <Col span={6}>
                         <Form.Item name="paying_CSO_HourlyRate" label="CSO Hourly Rate">
+                            <InputNumber className="w-full" min={0} />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                        <Form.Item name="paying_SSO_HourlyRate" label="SSO Hourly Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>
