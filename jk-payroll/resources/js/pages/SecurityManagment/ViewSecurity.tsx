@@ -4,6 +4,7 @@ import { formatDate, getLeaveStatus, getStatusText } from '@/utils/security';
 import { Table, Tag } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import { useEffect, useState } from 'react';
+import BlackMarksList from './BlackarkManagment/BlackMarksList';
 
 interface ViewSecurityProps {
     security: Security;
@@ -301,6 +302,8 @@ const ViewSecurity = ({ security, back }: ViewSecurityProps) => {
                     <h2 className="mb-4 border-b border-gray-300 pb-2 text-2xl font-bold text-gray-800">Asset Details</h2>
                     <Table columns={columnsAssets} dataSource={asstes} pagination={{ pageSize: 5 }} bordered />
                 </div>
+
+                 <BlackMarksList security={security}/>
 
                 {/* <button onClick={back} className="rounded bg-yellow-500 px-3 py-1 text-white shadow hover:bg-yellow-600">
                 Back

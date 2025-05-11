@@ -15,6 +15,8 @@ use App\Http\Controllers\LocationsController;
 use App\Http\Controllers\SecurityLocationAllocationController;
 
 use App\Http\Controllers\SecurityShiftLogController;
+use App\Http\Controllers\SecurityBlackMarkController;
+
 
 Route::apiResource('api/securities', SecurityController::class)->withoutMiddleware(['auth:api']);
 // Route::apiResource('api/bank-details', BankDetailController::class)->withoutMiddleware(['auth:api']);
@@ -118,5 +120,13 @@ Route::prefix('api/log-shift')->group(function () {
     Route::post('/create', [SecurityShiftLogController::class, 'store']); // Create a new shift
     Route::put('/update/{id}', [SecurityShiftLogController::class, 'update']); // Update a shift
     Route::delete('/delete/{id}', [SecurityShiftLogController::class, 'destroy']); // Delete a shift
+});
+
+Route::prefix('api/security-black-marks')->group(function () {
+    
+    Route::get('/', [SecurityBlackMarkController::class, 'index']);
+    Route::post('/', [SecurityBlackMarkController::class, 'store']);
+    Route::put('/{id}', [SecurityBlackMarkController::class, 'update']);
+
 });
 

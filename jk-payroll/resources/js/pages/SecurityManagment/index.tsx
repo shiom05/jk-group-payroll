@@ -10,6 +10,7 @@ import { Table, Button, Tag } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 
 import { EyeOutlined, EditOutlined  } from '@ant-design/icons';
+import BlackMarksList from './BlackarkManagment/BlackMarksList';
 
 
 const SecurityManagment = () => {
@@ -181,6 +182,8 @@ const SecurityManagment = () => {
             {
               toEditSecuritySelected && <EditSecurity securityData={toEditSecuritySelected} back={()=>setToEditSecuritySelected(null)} />  
             }
+
+           
         </Layout>
     );
 };
