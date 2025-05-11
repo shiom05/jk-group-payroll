@@ -77,6 +77,7 @@ export default function EditExpenseForm({ initialData, onCancelUpdate, onCancelL
             <Select.Option value="Food">Food</Select.Option>
             <Select.Option value="Travel">Travel</Select.Option>
             <Select.Option value="Accommodation">Accommodation</Select.Option>
+            <Select.Option value="SalaryAdvance">Salary Advance</Select.Option>
             <Select.Option value="Loan">Loan</Select.Option>
           </Select>
         </Form.Item>

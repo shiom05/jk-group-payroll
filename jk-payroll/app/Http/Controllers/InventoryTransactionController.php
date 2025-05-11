@@ -75,27 +75,64 @@ class InventoryTransactionController extends Controller
         }
 
 
+        // public function allocatedInventoriesForSecurityCurrentMonth($securityId)
+        // {
+        //     $now = Carbon::now();
+        //     $startOfMonth = $now->copy()->startOfMonth()->toDateString();
+        //     $endOfMonth = $now->copy()->endOfMonth()->toDateString();
+
+        //     $allocations = InventoryTransaction::with(['items', 'security'])
+        //         ->where('type', 'allocation')
+        //         ->where('security_id', $securityId)
+        //         ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth])
+        //         ->orderBy('transaction_date', 'asc')
+        //         ->get();
+
+        //     $totalCost = $allocations->sum('total_value');
+
+        //     return response()->json([
+        //         'message' => "Allocated inventories for Security ID: {$securityId} in " . $now->format('F') . " retrieved successfully.",
+        //         'total_allocated_value' => $totalCost,
+        //         'data' => $allocations
+        //     ]);
+        // }
+
         public function allocatedInventoriesForSecurityCurrentMonth($securityId)
-        {
-            $now = Carbon::now();
-            $startOfMonth = $now->copy()->startOfMonth()->toDateString();
-            $endOfMonth = $now->copy()->endOfMonth()->toDateString();
+{
+    $now = Carbon::now();
+    $startOfMonth = $now->copy()->startOfMonth()->toDateString();
+    $endOfMonth = $now->copy()->endOfMonth()->toDateString();
 
-            $allocations = InventoryTransaction::with(['items', 'security'])
-                ->where('type', 'allocation')
-                ->where('security_id', $securityId)
-                ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth])
-                ->orderBy('transaction_date', 'asc')
-                ->get();
+    // Get all allocations in current month
+    $allocations = InventoryTransaction::with(['items', 'security'])
+        ->where('type', 'allocation')
+        ->where('security_id', $securityId)
+        ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth])
+        ->orderBy('transaction_date', 'asc')
+        ->get();
 
-            $totalCost = $allocations->sum('total_value');
+    // Get all returns in current month for this security
+    $returns = InventoryTransaction::where('type', 'return')
+        ->where('security_id', $securityId)
+        ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth])
+        ->pluck('inventory_item_id')
+        ->toArray();
 
-            return response()->json([
-                'message' => "Allocated inventories for Security ID: {$securityId} in " . $now->format('F') . " retrieved successfully.",
-                'total_allocated_value' => $totalCost,
-                'data' => $allocations
-            ]);
-        }
+    // Filter out allocations that were returned in the same month
+    $activeAllocations = $allocations->reject(function ($allocation) use ($returns) {
+        // Check if any item in this allocation was returned
+        return $allocation->items->pluck('id')->intersect($returns)->isNotEmpty();
+    });
+
+    $totalCost = $activeAllocations->sum('total_value');
+
+    return response()->json([
+        'message' => "Active allocated inventories for Security ID: {$securityId} in " . $now->format('F') . " retrieved successfully.",
+        'total_allocated_value' => $totalCost,
+        'data' => $activeAllocations,
+        'filtered_out_returns' => count($allocations) - count($activeAllocations)
+    ]);
+}
 
 
         // public function returnInventory(Request $request)

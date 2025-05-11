@@ -29,4 +29,5 @@ export default interface Security {
     securityAdditionalInfo?: string;
     securityType: 'LSO' | 'OIC' | 'JSO' | 'SSO' | 'CSO';
     securityEpfNumber?: string;
+    bank_details: any
   }

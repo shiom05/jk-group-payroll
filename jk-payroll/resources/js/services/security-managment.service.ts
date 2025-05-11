@@ -48,8 +48,12 @@ export const getAsset = (securityId: any)=>{ //get current assets
     return axios.get(`/api/inventory/security/${securityId}`); 
 }
 
-export const getAllocatedInventoriesForSecuriy = (securityId:any)=>{ //use to calculate expense monthly
+export const getAllocatedInventoriesForSecuriy = (securityId:any)=>{
     return axios.get(`/api/inventory/allocations/${securityId}`)
+}
+
+export const getAllocatedInventoriesForSecuriyCurrentMonth = (securityId:any)=>{ //use to calculate expense monthly
+    return axios.get(`/api/inventory/allocations/current-month/${securityId}`)
 }
 
 
@@ -74,7 +78,7 @@ export const deleteExpenseSecurity = (id: any)=> {
 
 
 export const getSecurityCurrentMonthExpenses = (securityId:any)=>{
-    return axios.get(`/api/expenses/security/${securityId}/current-month}`)
+    return axios.get(`/api/expenses/security/${securityId}/current-month`)
 }
 
 
@@ -101,11 +105,11 @@ export const deleteLoanSecurity = (id: any)=> {
 }
 
 export const getSecurityCurrentMonthLoans = (securityId:any)=>{
-    return axios.get(`/api/loans/security/${securityId}/current-month}`)
+    return axios.get(`/api/loans/security/${securityId}/current-month`)
 }
 
 export const getSecurityCurrentMonthPayrollLoans = (securityId:any)=>{
-    return axios.get(`/api/loans/security/${securityId}/current-month/payroll}`)
+    return axios.get(`/api/loans/security/${securityId}/current-month/payroll`)
 }
 
 

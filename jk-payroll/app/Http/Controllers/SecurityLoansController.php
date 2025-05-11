@@ -37,20 +37,29 @@ class SecurityLoansController extends Controller
 
         return response()->json($loans);
     }
-
+    
     public function getLoansForPayroll($securityId)
     {
         $today = Carbon::now();
         $currentMonthEnd = $today->copy()->endOfMonth();
+        $currentMonthStart = $today->copy()->startOfMonth();
 
         $loans = SecurityLoans::where('security_id', $securityId)
-            ->where(function ($query) use ($currentMonthEnd) {
-                $query->whereRaw("DATE_FORMAT(start_date, '%Y-%m-01') <= ?", [$currentMonthEnd])
-                    ->whereRaw("LAST_DAY(DATE_ADD(start_date, INTERVAL installments - 1 MONTH)) >= ?", [$currentMonthEnd]);
+            ->where(function ($query) use ($currentMonthStart, $currentMonthEnd) {
+                $query->where('start_date', '<=', $currentMonthEnd)
+                    ->where(function($q) use ($currentMonthStart) {
+                        $q->where(function($sub) use ($currentMonthStart) {
+                            // SQLite compatible date calculation
+                            $sub->whereRaw(
+                                "date(start_date, '+' || installments || ' months') >= ?",
+                                [$currentMonthStart->format('Y-m-d')]
+                            );
+                        })
+                        ->orWhereNull('installments');
+                    });
             })
             ->get();
 
-        // Add calculated installment amount
         foreach ($loans as $loan) {
             $loan->installment_amount = round($loan->total_amount / $loan->installments, 2);
         }

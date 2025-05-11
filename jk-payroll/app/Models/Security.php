@@ -76,6 +76,11 @@ class Security extends Model
         return $this->belongsToMany(Locations::class, 'security_location_allocations', 'security_id', 'location_id');
     }
 
+    public function bankDetails()
+    {
+        return $this->hasOne(BankDetail::class, 'security_id', 'securityId');
+    }
+
     // Add this method to get status text
 public function getStatusTextAttribute()
 {

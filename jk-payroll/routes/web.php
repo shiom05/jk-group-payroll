@@ -51,6 +51,11 @@ Route::get('/expense-management', function () {
 })->name('ExpenseManagment');
 
 
+Route::get('/payroll-management', function () {
+    return Inertia::render('PayrolManagment/index');
+})->name('PayrolManagment');
+
+
 
 Route::get('/workos-data', [WorkOSController::class, 'fetchData']);
 

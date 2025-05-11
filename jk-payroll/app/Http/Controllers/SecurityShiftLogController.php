@@ -57,10 +57,12 @@ class SecurityShiftLogController extends Controller
     public function getCurrentMonthShiftsForSecurity($securityId)
     {
         $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
-        $today = Carbon::now()->toDateString();
+        // $today = Carbon::now()->toDateString();
+        $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
 
         $shifts = SecurityShiftLog::where('security_id', $securityId)
-            ->whereBetween('shift_date', [$startOfMonth, $today])
+            // ->whereBetween('shift_date', [$startOfMonth, $today])
+            ->whereBetween('shift_date', [$startOfMonth, $endOfMonth])
             ->get();
 
         return response()->json($shifts);

@@ -15,7 +15,7 @@ class SecurityController extends Controller
      */
     public function index()
     {
-        $securities = Security::all();
+        $securities = Security::with('bankDetails')->get();
         return response()->json($securities);   
     }
 

@@ -114,6 +114,7 @@ export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps
             <Select.Option value="Food">Food</Select.Option>
             <Select.Option value="Travel">Travel</Select.Option>
             <Select.Option value="Accommodation">Accommodation</Select.Option>
+            <Select.Option value="SalaryAdvance">Salary Advance</Select.Option>
             {mode === 'security' && <Select.Option value="Loan">Loan</Select.Option>}
           </Select>
         </Form.Item>
