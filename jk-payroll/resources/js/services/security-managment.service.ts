@@ -15,6 +15,9 @@ export const leaveDetails = (id: string)=> {
 export const fetchSecurities = ()=> {
     return axios.get('/api/securities'); 
 }
+export const fetchAllStatusSecurities = ()=> {
+    return axios.get('/api/all/securities'); 
+}
 
 export const fetchInventoryTypes = ()=> {
     return axios.get('/api/inventory/types'); 
@@ -111,6 +114,6 @@ export const getSecurityCurrentMonthLoans = (securityId:any)=>{
 export const getSecurityCurrentMonthPayrollLoans = (securityId:any)=>{
     return axios.get(`/api/loans/security/${securityId}/current-month/payroll`)
 }
-
-
-
+export const resignSecurity = (securityId:any, resignationData: any)=>{
+    return axios.post(`/api/termination/securities/${securityId}/resign`, resignationData);
+}

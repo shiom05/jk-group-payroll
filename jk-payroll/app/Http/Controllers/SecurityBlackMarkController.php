@@ -7,12 +7,14 @@ use App\Models\SecurityBlackMark;
 use App\Http\Requests\StoreSecurityBlackMarkRequest;
 use App\Http\Requests\UpdateSecurityBlackMarkRequest;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
+
 
 class SecurityBlackMarkController extends Controller
 {
      public function index(StoreSecurityBlackMarkRequest $request)
     {
-        $query = SecurityBlackMark::with('security')
+        $query = SecurityBlackMark::with(['security:securityId,securityName,securityType'])
             ->latest();
 
         if ($request->has('status')) {
@@ -26,6 +28,77 @@ class SecurityBlackMarkController extends Controller
         return response()->json($query->get());
     }
 
+
+    public function pendingCurrentMonthBlackMarks()
+    {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth()->toDateTimeString();
+        $endOfMonth = $now->copy()->endOfMonth()->toDateTimeString();
+
+        $blackMarks = SecurityBlackMark::with(['security:securityId,securityName,securityType'])
+            ->where('status', 'pending')
+            ->whereBetween('incident_date', [$startOfMonth, $endOfMonth])
+            ->latest()
+            ->get();
+
+        return response()->json($blackMarks);
+    }
+
+    public function pendingCurrentMonthBlackMarksForSecurity($security_id)
+    {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth()->toDateTimeString();
+        $endOfMonth = $now->copy()->endOfMonth()->toDateTimeString();
+
+        $blackMarks = SecurityBlackMark::with(['security:securityId,securityName,securityType'])
+            ->where('security_id', $security_id)
+            ->where('status', 'pending')
+            ->whereBetween('incident_date', [$startOfMonth, $endOfMonth])
+            ->latest()
+            ->get();
+
+        return response()->json($blackMarks);
+    }
+
+    /**
+     * Get COMPLETED black marks (deductible)
+     * Filtered by fine_effective_date in current month
+     * Only includes marks with completed status
+     */
+    public function deductibleCurrentMonthBlackMarks()
+    {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth()->toDateTimeString();
+        $endOfMonth = $now->copy()->endOfMonth()->toDateTimeString();
+
+        $blackMarks = SecurityBlackMark::with(['security:securityId,securityName,securityType'])
+            ->where('status', 'completed')
+            ->whereBetween('fine_effective_date', [$startOfMonth, $endOfMonth])
+            ->latest()
+            ->get();
+
+        return response()->json($blackMarks);
+    }
+
+    /**
+     * Get COMPLETED black marks for specific security (deductible)
+     */
+    public function deductibleCurrentMonthBlackMarksForSecurity($security_id)
+    {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth()->toDateTimeString();
+        $endOfMonth = $now->copy()->endOfMonth()->toDateTimeString();
+
+        $blackMarks = SecurityBlackMark::with(['security:securityId,securityName,securityType'])
+            ->where('security_id', $security_id)
+            ->where('status', 'completed')
+            ->whereBetween('fine_effective_date', [$startOfMonth, $endOfMonth])
+            ->latest()
+            ->get();
+
+        return response()->json($blackMarks);
+    }
+ 
     public function store(StoreSecurityBlackMarkRequest $request)
     {
         $validated = $request->validate([
@@ -64,6 +137,7 @@ class SecurityBlackMarkController extends Controller
 
     public function destroy(SecurityBlackMark $securityBlackMark)
     {
-        //
+        $securityBlackMark->delete();
+        return response()->json(['message' => 'location deleted']);
     }
 }

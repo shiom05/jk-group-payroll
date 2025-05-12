@@ -27,7 +27,7 @@ class SecurityBlackMark extends Model
 
     public function security()
     {
-        return $this->belongsTo(Security::class);
+         return $this->belongsTo(Security::class, 'security_id', 'securityId');
     }
 
     public function scopePending($query)

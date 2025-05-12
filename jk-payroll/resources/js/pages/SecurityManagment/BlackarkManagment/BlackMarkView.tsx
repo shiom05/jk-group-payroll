@@ -4,38 +4,17 @@ import {
   Card, Typography, Descriptions, Spin, Alert, Tag, Divider, Button
 } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import { fetchBlackMark } from '@/services/blackmark.service';
+import { fetchBlackMark, SecurityBlackMark } from '@/services/blackmark.service';
 
-const BlackMarkView = () => {
-  const { id } = useParams();
-  const [blackMark, setBlackMark] = useState<any>(null);
+
+interface BlackMarkViewProps{
+  blackMark: SecurityBlackMark,
+  onCancel: ()=> void,
+}
+
+const BlackMarkView = ({blackMark, onCancel}:BlackMarkViewProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchBlackMark(id);
-        setBlackMark(data);
-      } catch (err) {
-        setError('Failed to load black mark details');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -48,41 +27,38 @@ const BlackMarkView = () => {
       <Button
         type="default"
         icon={<ArrowLeftOutlined />}
-        href="/black-marks"
+        onClick={onCancel}
         style={{ marginBottom: '16px' }}
       >
         Back to List
       </Button>
 
-      <Card title="Black Mark Details" bordered>
+      <Card title="Black Mark Details">
         {
             blackMark &&
             <>
-               <Descriptions column={2} bordered size="middle">
-          <Descriptions.Item label="Security">
-            {blackMark.security.name}
-          </Descriptions.Item>
+            <Descriptions column={2} bordered size="middle">
+             
+              <Descriptions.Item label="Type">
+                {blackMark.type}
+              </Descriptions.Item>
 
-          <Descriptions.Item label="Type">
-            {blackMark.type}
-          </Descriptions.Item>
+              <Descriptions.Item label="Incident Date">
+                {new Date(blackMark.incident_date).toLocaleDateString()}
+              </Descriptions.Item>
 
-          <Descriptions.Item label="Incident Date">
-            {new Date(blackMark.incident_date).toLocaleDateString()}
-          </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag color={blackMark.status === 'completed' ? 'green' : 'orange'}>
+                  {blackMark.status.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
 
-          <Descriptions.Item label="Status">
-            <Tag color={blackMark.status === 'completed' ? 'green' : 'orange'}>
-              {blackMark.status.toUpperCase()}
-            </Tag>
-          </Descriptions.Item>
+              <Descriptions.Item label="Incident Description" span={2}>
+                {blackMark.incident_description}
+              </Descriptions.Item>
+            </Descriptions>
 
-          <Descriptions.Item label="Incident Description" span={2}>
-            {blackMark.incident_description}
-          </Descriptions.Item>
-        </Descriptions>
-
-        {blackMark.status === 'completed' && (
+        {(blackMark.status === 'completed' && blackMark.fine_effective_date) && (
           <>
             <Divider />
             <Typography.Title level={5}>Investigation Details</Typography.Title>
@@ -92,7 +68,7 @@ const BlackMarkView = () => {
                 {blackMark.inquiry_details}
               </Descriptions.Item>
               <Descriptions.Item label="Fine Amount">
-                ${blackMark.fine_amount}
+                Rs {blackMark.fine_amount}
               </Descriptions.Item>
               <Descriptions.Item label="Fine Effective Date">
                 {new Date(blackMark.fine_effective_date).toLocaleDateString()}

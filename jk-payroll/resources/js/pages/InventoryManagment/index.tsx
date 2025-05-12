@@ -2,7 +2,7 @@ import Layout from '@/layouts/Layout';
 import { useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
 import CreateInventory from './CreateInventory';
-import { fetchInventoryTypes, fetchSecurities, getInventoryitems } from '@/services/security-managment.service';
+import { fetchAllStatusSecurities, fetchInventoryTypes, fetchSecurities, getInventoryitems } from '@/services/security-managment.service';
 import { Table, Tag, Space, Button } from 'antd';
 import { EyeOutlined, EditOutlined, AppstoreOutlined, PlusCircleFilled, SwapOutlined, RollbackOutlined, DeliveredProcedureOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -34,7 +34,9 @@ const InventoryManagement = () => {
     const [invnentoryType, setInventoryTypes] = useState<any[]>([])
     const [inventories, setInventories] = useState<any[]>([]);
 
-    const [securities, setSecurities]= useState<Security[]>([])
+    const [securities, setSecurities]= useState<Security[]>([]);
+    const [securitiesToRetun, setSecuritiesToReturn]= useState<Security[]>([]);
+
     const [isCreatingNewinventory, setIsCreatingNewinventory] = useState<boolean>(false);
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
 
@@ -55,11 +57,16 @@ const InventoryManagement = () => {
         const result = await fetchSecurities();
         setSecurities(result.data)
     }
+    const getSecuritiesofAllStatus = async() =>{
+        const result = await fetchAllStatusSecurities();
+        setSecuritiesToReturn(result.data)
+    } 
 
     useEffect(()=>{
         getInventoryTypes();
         getInventories();
         getSecurities();
+        getSecuritiesofAllStatus();
     }, [isCreatingNewinventory]);
 
 
@@ -244,7 +251,7 @@ const InventoryManagement = () => {
                 <AllocationForm onCancel={()=>setAllocateInventory(false)} employees={securities} inventoryItems={inventories} />
             )}
 
-            {returnInventory && !editingItem && !isCreatingNewinventory && !allocateInventory && <ReturnForm onCancel={()=>setReturnInventory(false)} employees={securities} />}
+            {returnInventory && !editingItem && !isCreatingNewinventory && !allocateInventory && <ReturnForm onCancel={()=>setReturnInventory(false)} employees={securitiesToRetun} />}
         </Layout>
     );
 };

@@ -7,6 +7,7 @@ use App\Models\Security;
 use App\Http\Requests\StoreBankDetailRequest;
 use App\Http\Requests\UpdateBankDetailRequest;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class BankDetailController extends Controller
 {
@@ -61,6 +62,7 @@ class BankDetailController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        
         // Check if bank details already exist
     if (BankDetail::where('security_id', $request->security_id)->exists()) {
         return response()->json([
@@ -68,6 +70,7 @@ class BankDetailController extends Controller
         ], 409);
     }
 
+    
        // Create new bank details
     $bankDetail = BankDetail::create([
         'security_id' => $request->security_id,
@@ -75,7 +78,8 @@ class BankDetailController extends Controller
         'bank_branch' => $request->bank_branch,
         'account_number' => $request->account_number,
         'bank_account_holder_name' => $request->bank_account_holder_name,
-        'is_commercial_bank' => $request->is_commercial_bank,
+        'is_commercial_bank' => filter_var($request->is_commercial_bank, FILTER_VALIDATE_BOOLEAN),
+
     ]);
     return response()->json($bankDetail, 201);
 
@@ -100,20 +104,28 @@ class BankDetailController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateBankDetailRequest $request, BankDetail $id)
+    public function update(UpdateBankDetailRequest $request, $id)
     {
-        $bankDetail = BankDetail::findOrFail($id);
+        // Attempt to find the bank detail by the given security ID
+        $bankDetail = BankDetail::where('security_id', $id)->first();
 
+        // If the bank detail doesn't exist, create a new one
+        if (!$bankDetail) {
+            $bankDetail = new BankDetail();
+            $bankDetail->security_id = $id;
+        }
+
+        // Validate the request data
         $validator = Validator::make($request->all(), [
             'bank_name' => 'sometimes|required|string',
             'bank_branch' => 'sometimes|required|string',
             'bank_account_holder_name' => 'sometimes|required|string',
-            'is_commercial_bank' => 'sometimes|required|boolean',
-            'account_number' => 'sometimes|required|string|unique:bank_details,account_number,'.$id,
+            'is_commercial_bank' => 'sometimes|required',
+            'account_number' => 'sometimes|required|string',
             'security_id' => [
                 'required',
                 'string',
-                Rule::exists('securities', 'securityId')
+                Rule::exists('securities', 'securityId'),
             ],
         ]);
 
@@ -121,7 +133,16 @@ class BankDetailController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $bankDetail->update($validator->validated());
+        $validated = $validator->validated();
+
+        // Ensure boolean value is properly cast
+        if (isset($validated['is_commercial_bank'])) {
+            $validated['is_commercial_bank'] = filter_var($validated['is_commercial_bank'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        $bankDetail->fill($validated);
+        $bankDetail->save();
+
         return response()->json($bankDetail);
     }
 

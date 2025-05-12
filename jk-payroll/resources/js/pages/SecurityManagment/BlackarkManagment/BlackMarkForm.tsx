@@ -73,7 +73,7 @@ const BlackMarkForm = ({idEditing, BlackMark, onCancel, security}:BlackMarkFormP
         await createBlackMark(payload);
       }
 
-    //   onCancel();
+      onCancel();
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred');
     } finally {
@@ -149,8 +149,8 @@ const BlackMarkForm = ({idEditing, BlackMark, onCancel, security}:BlackMarkFormP
             </Col>
 
             <Col span={12}>
-              <Form.Item name="status" label="Status" initialValue="pending">
-                <Select onChange={(val) => setStatus(val)}>
+              <Form.Item name="status"  label="Status" initialValue="pending">
+                <Select disabled={!idEditing} onChange={(val) => setStatus(val)}>
                   <Option value="pending">Pending</Option>
                   <Option value="completed">Completed</Option>
                 </Select>

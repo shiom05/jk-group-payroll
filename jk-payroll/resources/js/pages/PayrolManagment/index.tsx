@@ -7,6 +7,7 @@ import { Button, Drawer, Image, Typography } from 'antd';
 import Table, { ColumnsType } from 'antd/es/table';
 import { useEffect, useState } from 'react';
 import PayslipComponent from './PaySlip';
+import { fetchDeductibleBlackMarks, SecurityBlackMark } from '@/services/blackmark.service';
 
 const { Title } = Typography;
 
@@ -20,6 +21,7 @@ const PayrolManagment = () => {
     const [expenseData, setExpenseData]= useState<any>([])
     const [inventoryData, setInventoryData]= useState<number>(0);
     const [loanData, setLoanData]= useState<any>([]);
+    const [finesData, setFinesData] = useState<SecurityBlackMark[]>([]);
 
     const columns: ColumnsType<Security> = [
         {
@@ -99,6 +101,13 @@ const PayrolManagment = () => {
         setLoading(false); 
     };
 
+    const getCurrentMonthFines = async (security:Security) => {
+        setLoading(true);
+        const result = await fetchDeductibleBlackMarks(security.securityId);
+        setFinesData(result);    
+        setLoading(false); 
+    };
+
     useEffect(() => {
         fetchSecurites();
     }, []);
@@ -110,6 +119,7 @@ const PayrolManagment = () => {
         getCurrentMonthExpenses(Security);
         getCurrentMonthInventory(Security);
         getCurrentMonthLoan(Security);
+        getCurrentMonthFines(Security);
         
 
         setTimeout(() => {
@@ -147,7 +157,7 @@ const PayrolManagment = () => {
                     size="large"
                     width={1000}
                 >
-                    <p><PayslipComponent totalShifts={shiftData} expenses={expenseData} security={selectedSecurity? selectedSecurity: null} inventoryExpenses={inventoryData} loanInstallment={loanData} /></p>
+                    <p><PayslipComponent totalShifts={shiftData} expenses={expenseData} security={selectedSecurity? selectedSecurity: null} inventoryExpenses={inventoryData} loanInstallment={loanData} finesData={finesData} /></p>
                 </Drawer>
             </div>
         </Layout>

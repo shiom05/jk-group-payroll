@@ -1,21 +1,25 @@
-import { getAsset, getBankDetails, getSecurityExpenses, leaveDetails } from '@/services/security-managment.service';
+import { getAsset, getBankDetails, getSecurityExpenses, getSecurityLoans, leaveDetails } from '@/services/security-managment.service';
 import Security from '@/types/jk/security';
 import { formatDate, getLeaveStatus, getStatusText } from '@/utils/security';
-import { Table, Tag } from 'antd';
+import { Table, Tag,  Collapse, Divider,  Card, Row, Col, Typography, Avatar  } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import { useEffect, useState } from 'react';
 import BlackMarksList from './BlackarkManagment/BlackMarksList';
+import CompensationSecurity from './CompensationManagment';
+import { getShiftsBySecurityId } from '@/services/logshift.service';
 
 interface ViewSecurityProps {
     security: Security;
     back: () => void;
 }
-
+const { Title, Text } = Typography;
 const ViewSecurity = ({ security, back }: ViewSecurityProps) => {
     const [bankDetails, setBankDetials] = useState<any>(null);
     const [leaves, setLeaves] = useState<any>([]);
     const [expenses, setExpenses] = useState<any>([]);
     const [asstes, setAssets] = useState<any>([]);
+    const [shiftData, setShiftData] = useState<any>([]);
+    const [loans, setLoans] = useState<any>([]);
 
     const fetchBankDetails = async () => {
         try {
@@ -47,11 +51,24 @@ const ViewSecurity = ({ security, back }: ViewSecurityProps) => {
         setAssets(result.data.data);
     };
 
+    const loadShiftsBySecurity = async () => {
+          const { data } = await getShiftsBySecurityId(security.securityId);
+          setShiftData(data);
+      };
+
+    const fetchAllSecurityLoans= async()=>{
+     const result = await getSecurityLoans(security.securityId);
+     setLoans(result.data);
+    }
+
+
     useEffect(() => {
         fetchBankDetails();
         fetchLeaveDetails();
         fetchExpenses();
         fetchAssets();
+        loadShiftsBySecurity();
+        fetchAllSecurityLoans();
     }, []);
 
     const columnsLeave = [
@@ -143,167 +160,536 @@ const ViewSecurity = ({ security, back }: ViewSecurityProps) => {
         },
     ];
 
+    const columnsShifts = [
+    { title: 'Location', dataIndex:[ 'location' ,'locationName'] },
+    { title: 'Date', dataIndex: 'shift_date' },
+    { title: 'Start', dataIndex: 'start_time' },
+    { title: 'End', dataIndex: 'end_time' },
+    { title: 'Hours', dataIndex: 'total_hours' },
+    {
+      title: 'Pay',
+      dataIndex: 'security_total_pay_for_shift',
+      render: (val: any) => <Tag color="blue">Rs. {val}</Tag>,
+    },
+  ];
+
+   const columnsLoans = [
+    {
+      title: 'Description',
+      dataIndex: 'description',
+    },
+    {
+      title: 'Start Date',
+      dataIndex: 'start_date',
+    },
+    {
+      title: 'Amount (LKR)',
+      dataIndex: 'total_amount',
+      render: (val: number) => val.toLocaleString(),
+    },
+    {
+      title: 'Installments',
+      dataIndex: 'installments',
+    }
+  ];
+
+const getEmploymentDuration = (startDateStr: any) => {
+  const startDate = new Date(startDateStr);
+  const now = new Date();
+
+  let years = now.getFullYear() - startDate.getFullYear();
+  let months = now.getMonth() - startDate.getMonth();
+
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  const yearText = years > 0 ? `${years} year${years > 1 ? 's' : ''}` : '';
+  const monthText = months > 0 ? `${months} month${months > 1 ? 's' : ''}` : '';
+
+  return [yearText, monthText].filter(Boolean).join(', ') || '0 months';
+};
+
+const getStatusTag = (status: number) => {
+    const statusText = getStatusText(status);
+    return (
+      <Tag color={statusText === 'Active' ? 'green' : 'red'}>
+        {statusText}
+      </Tag>
+    );
+  };
     return (
         <>
             <div className="p-20">
-                <div className="flex flex-row">
-                    <div>
-                        <img src={`/storage/${security.securityPhoto}`} alt={security.securityName} className="h-32 w-32 rounded-full object-cover" />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <h2 className="text-4xl"> {security.securityName}</h2>
-                        <p className="text-xl">{security.securityId}</p>
-                        <p className={`${getStatusText(security.securityStatus) === 'Active' ? 'text-green-500' : 'text-red-500'}`}>
-                            {getStatusText(security.securityStatus)}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="mt-10 rounded-xl border border-gray-200 bg-gray-100 p-8 shadow-lg">
-                    <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
-                        {/* Personal Details */}
-                        <div>
-                            <h2 className="mb-4 border-b border-gray-300 pb-2 text-2xl font-bold text-gray-800">Personal Details</h2>
-                            <div className="space-y-3 text-gray-700">
-                                <div className="flex">
-                                    <span className="w-1/2 font-medium">Primary Contact Number:</span>
-                                    <span className="w-1/2">{security.securityPrimaryContact}</span>
-                                </div>
-                                <div className="flex">
-                                    <span className="w-1/2 font-medium">Secondary Contact Number:</span>
-                                    <span className="w-1/2">{security.securitySecondaryContact}</span>
-                                </div>
-                                <div className="flex">
-                                    <span className="w-1/2 font-medium">NIC Number:</span>
-                                    <span className="w-1/2">{security.securityNicNumber}</span>
-                                </div>
-                                <div className="flex">
-                                    <span className="w-1/2 font-medium">Date of Birth:</span>
-                                    <span className="w-1/2">{formatDate(security.securityDob)}</span>
-                                </div>
-                                <div className="flex">
-                                    <span className="w-1/2 font-medium">Date of Join:</span>
-                                    <span className="w-1/2">{formatDate(security.securityDateOfJoin)}</span>
-                                </div>
+                <Card className="p-[24px] bg-gray-100!" >
+                    <Row align="middle" gutter={24}>
+                        <Col>
+                            <Avatar
+                                src={`/storage/${security.securityPhoto}`}
+                                alt={security.securityName}
+                                size={128}
+                                style={{
+                                    borderRadius: '50%',
+                                    objectFit: 'cover',
+                                    border: '2px solid #f0f0f0',
+                                }}
+                            />
+                        </Col>
+                        <Col>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <Title level={2} style={{ margin: 0 }}>
+                                    {security.securityName}
+                                </Title>
+                                <Text type="secondary" strong style={{ fontSize: 18 }}>
+                                    {security.securityId}
+                                </Text>
+                                  {
+                                    security.securityEpfNumber &&
+                                    <Text type="secondary" strong style={{ fontSize: 18 }}>
+                                   EPF:  {security.securityEpfNumber}
+                                </Text>
+                                  }
+                                <Tag color="blue">{security.securityType}</Tag>
+                              <div>{getStatusTag(security.securityStatus)}</div>
                             </div>
-                        </div>
+                        </Col>
+                    </Row>
+                </Card>
 
-                        {/* Bank Details */}
-                        {bankDetails && (
-                            <div>
-                                <h2 className="mb-4 border-b border-gray-300 pb-2 text-2xl font-bold text-gray-800">Bank Details</h2>
-                                <div className="space-y-3 text-gray-700">
-                                    <div className="flex">
-                                        <span className="w-1/2 font-medium">Bank Name:</span>
-                                        <span className="w-1/2">{bankDetails.bank_name}</span>
+                <Divider orientation="left"></Divider>
+                <Collapse
+                    items={[
+                        {
+                            key: '1',
+                            label: <h2 className="text-2xl font-bold text-gray-800"> Personal Details</h2>,
+                            showArrow: false,
+                            children: (
+                                <Card
+                                    className="mt-10"
+                                    style={{
+                                        borderRadius: 12,
+                                        borderColor: '#e5e7eb',
+                                        backgroundColor: '#f3f4f6',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                                    }}
+                                >
+                                    <div style={{ padding: 32 }}>
+                                        <Row gutter={48}>
+                                            {/* Personal Details */}
+                                            <Col xs={24} md={12}>
+                                                <Title
+                                                    level={2}
+                                                    style={{
+                                                        marginBottom: 16,
+                                                        paddingBottom: 8,
+                                                        borderBottom: '1px solid #d1d5db',
+                                                        fontSize: '1.5rem',
+                                                        fontWeight: 700,
+                                                        color: '#1f2937',
+                                                    }}
+                                                >
+                                                    Personal Details
+                                                </Title>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Primary Contact Number:</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{security.securityPrimaryContact}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Secondary Contact Number:</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{security.securitySecondaryContact}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>NIC Number:</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{security.securityNicNumber}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Date of Birth:</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{formatDate(security.securityDob)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Date of Join:</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{formatDate(security.securityDateOfJoin)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Employment Duration</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{getEmploymentDuration(security.securityDateOfJoin)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Gender</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityGender.toLocaleUpperCase())}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Maritial Status</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityMaritalStatus? "Married":"UnMarried")}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Educational Info</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityEducationalInfo)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Previous Workplace</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityPreviousWorkplace)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Experience</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityExperience)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Other</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityAdditionalInfo? security.securityAdditionalInfo: "-")}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                </div>
+
+                                                <Title
+                                                    level={2}
+                                                    style={{
+                                                        marginBottom: 16,
+                                                        paddingBottom: 8,
+                                                        borderBottom: '1px solid #d1d5db',
+                                                        fontSize: '1.5rem',
+                                                        fontWeight: 700,
+                                                        color: '#1f2937',
+                                                        marginTop: 70
+                                                    }}
+                                                >
+                                                    Address Details
+                                                </Title>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Current Address</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityCurrentAddress)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Permanent Address</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityPermanentAddress)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>District</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityDistrict)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Police Division</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityPoliceDivision)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Grama Niladari Division</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityGramaNiladariDivision)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Grama Niladari Division</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityGramaNiladariDivision)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                </div>
+                                            </Col>
+
+                                            {/* Bank Details */}
+                                            {bankDetails && (
+                                                <Col xs={24} md={12}>
+                                                    <Title
+                                                        level={2}
+                                                        style={{
+                                                            marginBottom: 16,
+                                                            paddingBottom: 8,
+                                                            borderBottom: '1px solid #d1d5db',
+                                                            fontSize: '1.5rem',
+                                                            fontWeight: 700,
+                                                            color: '#1f2937',
+                                                        }}
+                                                    >
+                                                        Bank Details
+                                                    </Title>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                                        <Row>
+                                                            <Col span={12}>
+                                                                <Text strong>Bank Name:</Text>
+                                                            </Col>
+                                                            <Col span={12}>
+                                                                <Text>{bankDetails.bank_name}</Text>
+                                                            </Col>
+                                                        </Row>
+                                                        <Row>
+                                                            <Col span={12}>
+                                                                <Text strong>Bank Branch:</Text>
+                                                            </Col>
+                                                            <Col span={12}>
+                                                                <Text>{bankDetails.bank_branch}</Text>
+                                                            </Col>
+                                                        </Row>
+                                                        <Row>
+                                                            <Col span={12}>
+                                                                <Text strong>Bank Account Number:</Text>
+                                                            </Col>
+                                                            <Col span={12}>
+                                                                <Text>{bankDetails.account_number}</Text>
+                                                            </Col>
+                                                        </Row>
+                                                    </div>
+
+                                                      <Title
+                                                    level={2}
+                                                    style={{
+                                                        marginBottom: 16,
+                                                        paddingBottom: 8,
+                                                        borderBottom: '1px solid #d1d5db',
+                                                        fontSize: '1.5rem',
+                                                        fontWeight: 700,
+                                                        color: '#1f2937',
+                                                        marginTop: 70
+                                                    }}
+                                                >
+                                                    Emergency Contact Details
+                                                </Title>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Contact Name</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityEmergencyContactName)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Contact Address</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityEmergencyContactNumber)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row>
+                                                        <Col span={12}>
+                                                            <Text strong>Contact Address</Text>
+                                                        </Col>
+                                                        <Col span={12}>
+                                                            <Text>{(security.securityEmergencyContactAddress)}</Text>
+                                                        </Col>
+                                                    </Row>
+                                                   </div>
+                                                </Col>
+                                            )}
+                                        </Row>
                                     </div>
-                                    <div className="flex">
-                                        <span className="w-1/2 font-medium">Bank Branch:</span>
-                                        <span className="w-1/2">{bankDetails.bank_branch}</span>
+                                </Card>
+                            ),
+                        },
+                    ]}
+                />
+
+                <Divider orientation="left"></Divider>
+                <Collapse
+                    size="large"
+                    items={[
+                        {
+                            key: '1',
+                            showArrow: false,
+                            label: <h2 className="text-2xl font-bold text-gray-800">Document Checklist</h2>,
+                            children: (
+                                <div className="rounded-xl border border-gray-200 bg-gray-100 p-8 shadow-lg">
+                                    <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
+                                        <div>
+                                            <div className="space-y-3 text-gray-700">
+                                                <div className="flex">
+                                                    <span className="w-1/2 font-medium">NIC Copy:</span>
+                                                    <span className={`w-1/2 ${security.securityNicUploaded ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {security.securityNicUploaded ? 'Provided' : 'Not Provided'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex">
+                                                    <span className="w-1/2 font-medium">Birth Certificate Copy:</span>
+                                                    <span
+                                                        className={`w-1/2 ${security.securityBirthCertificateUploaded ? 'text-green-600' : 'text-red-600'}`}
+                                                    >
+                                                        {security.securityBirthCertificateUploaded ? 'Provided' : 'Not Provided'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex">
+                                                    <span className="w-1/2 font-medium">Police Report Copy:</span>
+                                                    <span
+                                                        className={`w-1/2 ${security.securityPoliceReportUploaded ? 'text-green-600' : 'text-red-600'}`}
+                                                    >
+                                                        {security.securityPoliceReportUploaded ? 'Provided' : 'Not Provided'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex">
+                                                    <span className="w-1/2 font-medium">Gramasewaka Certificate Copy:</span>
+                                                    <span
+                                                        className={`w-1/2 ${security.securityGramasewakaLetterUploaded ? 'text-green-600' : 'text-red-600'}`}
+                                                    >
+                                                        {security.securityGramasewakaLetterUploaded ? 'Provided' : 'Not Provided'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex">
-                                        <span className="w-1/2 font-medium">Bank Account Number:</span>
-                                        <span className="w-1/2">{bankDetails.account_number}</span>
-                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                            ),
+                        },
+                    ]}
+                />
 
-                <div className="mt-10 rounded-xl border border-gray-200 bg-gray-100 p-8 shadow-lg">
-                    <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
-                        <div>
-                            <h2 className="mb-4 border-b border-gray-300 pb-2 text-2xl font-bold text-gray-800">Document Checklist</h2>
-                            <div className="space-y-3 text-gray-700">
-                                <div className="flex">
-                                    <span className="w-1/2 font-medium">NIC Copy:</span>
-                                    <span className={`w-1/2 ${security.securityNicUploaded ? 'text-green-600' : 'text-red-600'}`}>
-                                        {security.securityNicUploaded ? 'Provided' : 'Not Provided'}
-                                    </span>
+                <Divider orientation="left"></Divider>
+
+                <Collapse
+                    size="large"
+                    items={[
+                        {
+                            key: '1',
+                            showArrow: false,
+                            label: <h2 className="text-2xl font-bold text-gray-800">Leave Details</h2>,
+                            children: (
+                                <div className="bg-white-100 mt-10 rounded-xl border border-gray-200 p-8 shadow-lg">
+                                    <Table columns={columnsLeave} dataSource={leaves} rowKey="id" bordered />
                                 </div>
-                                <div className="flex">
-                                    <span className="w-1/2 font-medium">Birth Certificate Copy:</span>
-                                    <span className={`w-1/2 ${security.securityBirthCertificateUploaded ? 'text-green-600' : 'text-red-600'}`}>
-                                        {security.securityBirthCertificateUploaded ? 'Provided' : 'Not Provided'}
-                                    </span>
+                            ),
+                        },
+                    ]}
+                />
+
+                <Divider orientation="left"></Divider>
+                <Collapse
+                    size="large"
+                    items={[
+                        {
+                            key: '1',
+                            showArrow: false,
+                            label: <h2 className="text-2xl font-bold text-gray-800">Expense Details</h2>,
+                            children: (
+                                <div className="bg-white-100 mt-10 rounded-xl border border-gray-200 p-8 shadow-lg">
+                                    <Table columns={columnsExpense} dataSource={expenses} pagination={{ pageSize: 5 }} bordered />
                                 </div>
-                                <div className="flex">
-                                    <span className="w-1/2 font-medium">Police Report Copy:</span>
-                                    <span className={`w-1/2 ${security.securityPoliceReportUploaded ? 'text-green-600' : 'text-red-600'}`}>
-                                        {security.securityPoliceReportUploaded ? 'Provided' : 'Not Provided'}
-                                    </span>
+                            ),
+                        },
+                    ]}
+                />
+
+                <Divider orientation="left"></Divider>
+                <Collapse
+                    size="large"
+                    items={[
+                        {
+                            key: '1',
+                            showArrow: false,
+                            label: <h2 className="text-2xl font-bold text-gray-800">Loan Details</h2>,
+                            children: (
+                                <div className="bg-white-100 mt-10 rounded-xl border border-gray-200 p-8 shadow-lg">
+                                    <Table columns={columnsLoans} dataSource={loans} pagination={{ pageSize: 5 }} bordered />
                                 </div>
-                                <div className="flex">
-                                    <span className="w-1/2 font-medium">Gramasewaka Certificate Copy:</span>
-                                    <span className={`w-1/2 ${security.securityGramasewakaLetterUploaded ? 'text-green-600' : 'text-red-600'}`}>
-                                        {security.securityGramasewakaLetterUploaded ? 'Provided' : 'Not Provided'}
-                                    </span>
+                            ),
+                        },
+                    ]}
+                />
+
+                <Divider orientation="left"></Divider>
+                <Collapse
+                    size="large"
+                    items={[
+                        {
+                            key: '1',
+                            showArrow: false,
+                            label: <h2 className="text-2xl font-bold text-gray-800">Asset Details</h2>,
+                            children: (
+                                <div className="bg-white-100 mt-10 rounded-xl border border-gray-200 p-8 shadow-lg">
+                                    <Table columns={columnsAssets} dataSource={asstes} pagination={{ pageSize: 5 }} bordered />
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                            ),
+                        },
+                    ]}
+                />
 
-                {/* Leave Details */}
-                {leaves.length && (
-                    //   <div className="mt-10 rounded-xl border border-gray-200 bg-gray-100 p-8 shadow-lg">
-                    //   <div className="grid grid-cols-1 gap-12">
-                    //       <div>
-                    //           <h2 className="mb-4 border-b border-gray-300 pb-2 text-2xl font-bold text-gray-800">Leave Details</h2>
-                    //           <div className="space-y-3 text-gray-700">
-                    //               <table className="w-full border-collapse">
-                    //                         <thead className="bg-gray-200 text-gray-700">
-                    //                           <tr>
-                    //                             <th className="px-4 py-3 text-left">#</th>
-                    //                             <th className="px-4 py-3 text-left">Type</th>
-                    //                             <th className="px-4 py-3 text-left">Reason</th>
-                    //                             <th className="px-4 py-3 text-left">Description</th>
-                    //                             <th className="px-4 py-3 text-left">Start</th>
-                    //                             <th className="px-4 py-3 text-left">End</th>
-                    //                             <th className="px-4 py-3 text-left">Status</th>
-                    //                           </tr>
-                    //                         </thead>
-                    //                         <tbody>
-                    //                           {leaves.length ? leaves.map((leave:any, index: number) => (
-                    //                             <tr key={index} className="border-b hover:bg-gray-100">
-                    //                               <td className="px-4 py-3">{index+1}</td>
-                    //                               <td className="px-4 py-3">{leave.leave_type}</td>
-                    //                               <td className="px-4 py-3">{leave.reason}</td>
-                    //                               <td className="px-4 py-3">{leave.description}</td>
-                    //                               <td className="px-4 py-3">{formatDate(leave.start_date)}</td>
-                    //                               <td className="px-4 py-3">{formatDate(leave.end_date)}</td>
-                    //                               <td className="px-4 py-3">
-                    //                                 <span className={`rounded px-2 py-1 text-white ${getLeaveStatus(leave.start_date, leave.end_date) === 'Pending' ? 'bg-yellow-500' : getLeaveStatus(leave.start_date, leave.end_date) === 'Completed'? 'bg-green-500' : 'bg-red-500'}`}>
-                    //                                   {getLeaveStatus(leave.start_date, leave.end_date)}
-                    //                                 </span>
-                    //                               </td>
-                    //                             </tr>
-                    //                           )) : <tr><td colSpan={7} className="px-4 py-6 text-center font-bold">No Leaves Found</td></tr>}
-                    //                         </tbody>
-                    //                       </table>
-                    //           </div>
-                    //       </div>
-                    //   </div>
-                    //   </div>
+                <Divider orientation="left"></Divider>
+                <Collapse
+                    size="large"
+                    items={[
+                        {
+                            key: '1',
+                            showArrow: false,
+                            label: <h2 className="text-2xl font-bold text-gray-800">Shift Details</h2>,
+                            children: (
+                                <div className="bg-white-100 mt-10 rounded-xl border border-gray-200 p-8 shadow-lg">
+                                    <Table columns={columnsShifts} dataSource={shiftData} pagination={{ pageSize: 5 }} bordered />
+                                </div>
+                            ),
+                        },
+                    ]}
+                />
 
-                    <div className="bg-white-100 mt-10 rounded-xl border border-gray-200 p-8 shadow-lg">
-                        <h2 className="mb-4 border-b border-gray-300 pb-2 text-2xl font-bold text-gray-800">Leave Details</h2>
-                        <Table columns={columnsLeave} dataSource={leaves} rowKey="id" bordered />
-                    </div>
-                )}
+                <BlackMarksList security={security} />
 
-                <div className="bg-white-100 mt-10 rounded-xl border border-gray-200 p-8 shadow-lg">
-                    <h2 className="mb-4 border-b border-gray-300 pb-2 text-2xl font-bold text-gray-800">Expense Details</h2>
-                    <Table columns={columnsExpense} dataSource={expenses} pagination={{ pageSize: 5 }} bordered />
-                </div>
-                <div className="bg-white-100 mt-10 rounded-xl border border-gray-200 p-8 shadow-lg">
-                    <h2 className="mb-4 border-b border-gray-300 pb-2 text-2xl font-bold text-gray-800">Asset Details</h2>
-                    <Table columns={columnsAssets} dataSource={asstes} pagination={{ pageSize: 5 }} bordered />
-                </div>
-
-                 <BlackMarksList security={security}/>
+                <CompensationSecurity security={security} />
 
                 {/* <button onClick={back} className="rounded bg-yellow-500 px-3 py-1 text-white shadow hover:bg-yellow-600">
                 Back

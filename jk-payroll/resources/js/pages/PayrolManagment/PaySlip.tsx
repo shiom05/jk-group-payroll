@@ -1,3 +1,4 @@
+import { SecurityBlackMark } from '@/services/blackmark.service';
 import Security from '@/types/jk/security';
 import { Card, Table, Typography } from 'antd';
 import { useMemo } from 'react';
@@ -9,12 +10,13 @@ interface PayslipPorps {
     expenses: any[];
     inventoryExpenses: number;
     security: Security | null;
-    loanInstallment: any
+    loanInstallment: any,
+    finesData: SecurityBlackMark[]
 }
 
-const PayslipComponent = ({ totalShifts, expenses, inventoryExpenses, security, loanInstallment }: PayslipPorps) => {
+const PayslipComponent = ({ totalShifts, expenses, inventoryExpenses, security, loanInstallment, finesData }: PayslipPorps) => {
 
-console.log({expenses, inventoryExpenses, security, loanInstallment })
+console.log({expenses, inventoryExpenses, security, loanInstallment, finesData })
 
 const formatNumber = (num: number) => {
   return num.toLocaleString('en-US', {
@@ -75,6 +77,15 @@ const totalSalaryAdvances = useMemo(() => {
 //   }, 0);
 // }, [inventoryExpenses]); 
 
+const totalFines = useMemo(() => {
+  return finesData.reduce((totalFineAmount: number, fine: SecurityBlackMark) => {
+    if(fine.fine_amount){
+       totalFineAmount += fine.fine_amount;
+    }
+    return totalFineAmount;
+  }, 0);
+}, [finesData]); 
+
 const totalInventoryExpense = inventoryExpenses;
 
 const totalLoan = useMemo(() => {
@@ -86,9 +97,8 @@ const totalLoan = useMemo(() => {
 
 const bankCharge = security?.bank_details.is_commercial_bank === "true"? 0: 100;
 
-const totalFines = 0;
 
-console.log({totalShiftPay, totalAccomdation, totalFood, totalTravel, totalLoan, inventoryExpenses,totalSalaryAdvances, totalInventoryExpense })
+console.log({totalShiftPay, totalAccomdation, totalFood, totalTravel, totalLoan, inventoryExpenses,totalSalaryAdvances, totalInventoryExpense, totalFines })
 
     // Sample payslip data
     const payslipData = [

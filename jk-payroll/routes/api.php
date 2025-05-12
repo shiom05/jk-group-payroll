@@ -16,9 +16,11 @@ use App\Http\Controllers\SecurityLocationAllocationController;
 
 use App\Http\Controllers\SecurityShiftLogController;
 use App\Http\Controllers\SecurityBlackMarkController;
+use App\Http\Controllers\SecurityCompensationController;
 
 
 Route::apiResource('api/securities', SecurityController::class)->withoutMiddleware(['auth:api']);
+Route::get('api/all/securities', [SecurityController::class, 'getAllSecurities']);
 // Route::apiResource('api/bank-details', BankDetailController::class)->withoutMiddleware(['auth:api']);
 
 Route::prefix('api/bank-details')->group(function () {
@@ -26,6 +28,10 @@ Route::prefix('api/bank-details')->group(function () {
     Route::post('/', [BankDetailController::class, 'store']);
     Route::put('/{id}', [BankDetailController::class, 'update']);
     // Add other routes as needed
+});
+
+Route::prefix('api/termination')->group(function () {
+    Route::post('/securities/{security}/resign', [SecurityController::class, 'resign']);
 });
 
 
@@ -127,6 +133,26 @@ Route::prefix('api/security-black-marks')->group(function () {
     Route::get('/', [SecurityBlackMarkController::class, 'index']);
     Route::post('/', [SecurityBlackMarkController::class, 'store']);
     Route::put('/{id}', [SecurityBlackMarkController::class, 'update']);
+    Route::delete('/{securityBlackMark}', [SecurityBlackMarkController::class, 'destroy']);
+    // Pending black marks (not deductible)
+
+    Route::get('/current-month/pending', [SecurityBlackMarkController::class, 'pendingCurrentMonthBlackMarks']);
+    Route::get('/current-month/pending/{security_id}', [SecurityBlackMarkController::class, 'pendingCurrentMonthBlackMarksForSecurity']);
+
+    // Completed black marks (deductible)
+    Route::get('/current-month/deductible', [SecurityBlackMarkController::class, 'deductibleCurrentMonthBlackMarks']);
+    Route::get('/current-month/deductible/{security_id}', [SecurityBlackMarkController::class, 'deductibleCurrentMonthBlackMarksForSecurity']);
 
 });
 
+
+Route::prefix('api/compensation')->group(function () {
+    Route::get('/', [SecurityCompensationController::class, 'index']);
+    Route::post('/', [SecurityCompensationController::class, 'store']);
+    Route::put('/{compensation}', [SecurityCompensationController::class, 'update']);
+    Route::delete('/{compensation}', [SecurityCompensationController::class, 'destroy']);
+
+    Route::get('/current-month/{security_id}', [SecurityCompensationController::class, 'getCurrentMonthCompensations']);
+    
+
+});

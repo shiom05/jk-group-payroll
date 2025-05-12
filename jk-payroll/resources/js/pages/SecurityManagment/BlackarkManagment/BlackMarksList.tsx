@@ -1,9 +1,10 @@
-import { fetchBlackMarks, SecurityBlackMark } from '@/services/blackmark.service';
+import { deleteBlackMark, fetchBlackMarks, SecurityBlackMark } from '@/services/blackmark.service';
 import Security from '@/types/jk/security';
 import { EyeOutlined, PlusCircleFilled, EditOutlined } from '@ant-design/icons';
-import { Button, Card, Select, Space, Spin, Table, Tag, Typography } from 'antd';
+import { Button, Card, Drawer, Popconfirm, Select, Space, Spin, Table, Tag, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import BlackMarkForm from './BlackMarkForm';
+import BlackMarkView from './BlackMarkView';
 
 const { Option } = Select;
 
@@ -20,8 +21,7 @@ const BlackMarksList = ({ security }: BlackMarksListProps) => {
     const [isView, setView] = useState<SecurityBlackMark | null>(null);
     const [toEdit, setToEdit] = useState<SecurityBlackMark | null>(null);
 
-    useEffect(() => {
-        const loadData = async () => {
+    const loadData = async () => {
             try {
                 setLoading(true);
                 if (statusFilter === '') {
@@ -38,8 +38,29 @@ const BlackMarksList = ({ security }: BlackMarksListProps) => {
             }
         };
 
+    useEffect(() => {
+        
+
         loadData();
     }, [statusFilter]);
+
+    const onRemove = async(id:string)=>{
+        const result = await deleteBlackMark(id);
+        loadData();
+    }
+
+ const [open, setOpen] = useState(false);
+
+  const showDrawer = () => {
+    setOpen(true);
+  };
+
+  const onClose = () => {
+    setOpen(false);
+    setIsAdd(false);
+    setToEdit(null);
+    setView(null);
+  };
 
     const columns = [
         {
@@ -63,20 +84,23 @@ const BlackMarksList = ({ security }: BlackMarksListProps) => {
             title: 'Fine',
             dataIndex: 'fine_amount',
             key: 'fine_amount',
-            render: (amount: number | null) => (amount ? `$${amount}` : '-'),
+            render: (amount: number | null) => (amount ? `Rs ${amount}` : '-'),
         },
         {
             title: 'Actions',
             key: 'actions',
             render: (_: any, record: SecurityBlackMark) => (
-               <>
-                <Button icon={<EyeOutlined />} size="small" onClick={() => setView(record)}>
-                    View
-                </Button>
-                <Button icon={<EditOutlined />} size="small" onClick={() => setToEdit(record)}>
-                    Edit
-                </Button>
-               </>
+                <div className='flex flex-row gap-x-2'>
+                    <Button icon={<EyeOutlined />} size="middle" onClick={() => {setView(record); showDrawer()}}>
+                        View
+                    </Button>
+                    <Button icon={<EditOutlined />} size="middle" title='Edit the black mark or complete the black mark with fine amount' onClick={() => {setToEdit(record); showDrawer()}}>
+                        Edit
+                    </Button>
+                    <Popconfirm title="Remove this Black Mark?" onConfirm={() => onRemove(record.id)} okText="Yes" cancelText="No">
+                        <Button danger>Remove</Button>
+                    </Popconfirm>
+                </div>
             ),
         },
     ];
@@ -89,7 +113,15 @@ const BlackMarksList = ({ security }: BlackMarksListProps) => {
                         <Typography.Title level={2} style={{ margin: 0 }}>
                             Security Black Mark Managment
                         </Typography.Title>
-                        <Button type="primary" icon={<PlusCircleFilled />} onClick={() => setIsAdd(true)} size="large">
+                        <Button
+                            type="primary"
+                            icon={<PlusCircleFilled />}
+                            onClick={() => {
+                                setIsAdd(true);
+                                showDrawer();
+                            }}
+                            size="large"
+                        >
                             Add Black Mark
                         </Button>
                     </Space>
@@ -120,7 +152,30 @@ const BlackMarksList = ({ security }: BlackMarksListProps) => {
                 </div>
             )}
 
-            {(isAdd || toEdit) && <BlackMarkForm idEditing={!toEdit? false: true} BlackMark={toEdit? toEdit: null} security={security} onCancel={() =>{ setIsAdd(false); setToEdit(null)}} />}
+            <Drawer
+                title={ isView? "" : !toEdit ? 'Add New Black Mark' : 'Edit Black Mark'}
+                width={800}
+                closable={{ 'aria-label': 'Close Button' }}
+                onClose={onClose}
+                open={open}
+                maskClosable={false} // Prevent closing when clicking mask
+                keyboard={false}
+            >
+                {(isAdd || toEdit) && (
+                    <BlackMarkForm
+                        idEditing={!toEdit ? false : true}
+                        BlackMark={toEdit ? toEdit : null}
+                        security={security}
+                        onCancel={() => {
+                            setIsAdd(false);
+                            setToEdit(null);
+                            onClose();
+                        }}
+                    />
+                )}
+
+                {isView && <BlackMarkView blackMark={isView} onCancel={onClose} />}
+            </Drawer>
         </>
     );
 };

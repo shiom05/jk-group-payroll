@@ -44,3 +44,25 @@ export const fetchSecurities = async () => {
   const response = await axios.get('/api/securities');
   return response.data;
 };
+
+export const deleteBlackMark = (id: any)=> {
+    return axios.delete(`${API_URL}/${id}`); 
+}
+
+export const fetchPendingBlackMarks = async (securityId?: string) => {
+  const url = securityId 
+    ? `${API_URL}/current-month/pending/${securityId}`
+    : `${API_URL}/current-month/pending`;
+  const response = await axios.get(url);
+  return response.data;
+};
+
+//completed black marks
+export const fetchDeductibleBlackMarks = async (securityId?: string) => {
+  const url = securityId 
+    ? `${API_URL}/current-month/deductible/${securityId}`
+    : `${API_URL}/current-month/deductible`;
+  const response = await axios.get(url);
+  return response.data;
+};
+

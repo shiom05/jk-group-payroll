@@ -77,20 +77,8 @@ const EditSecurity = ({ securityData, back }: editProps) => {
     };
 
     const saveBankDetails = async () => {
-        const data = new FormData();
-        for (const key in bankDetails) {
-            if (bankDetails[key] !== null) {
-                data.append(key, bankDetails[key]);
-            }
-        }
-        data.append('security_id', securityId);
-
         try {
-            await axios.put(`/api/bank-details/${securityId}`, data, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            await axios.put(`/api/bank-details/${securityId}`, {...bankDetails, security_id: securityId});
             setTimeout(() => {
                 router.get('/security-management');
             }, 5000);
@@ -102,26 +90,21 @@ const EditSecurity = ({ securityData, back }: editProps) => {
     const handleSubmit = async (e: any) => {
         e.preventDefault();
         
-        const editData = new FormData();
+
         for (const key in formData) {
-            if (key === 'securityPhoto' && formData[key]) {
-                editData.append(key, formData[key]);
-            } else if (key === 'securityStatus') {
+             console.log("...")
+ 
+           if (key === 'securityStatus') {
                 if (formData['securityNicUploaded'] && formData['securityPoliceReportUploaded'] && 
                     formData['securityBirthCertificateUploaded'] && formData['securityGramasewakaLetterUploaded']) {
-                    editData.append(key, '200');
+                    formData['securityStatus'] = 200;
+                    console.log("...")
                 }
-            } else if (formData[key] !== null) {
-                editData.append(key, formData[key]);
             }
         }
         
         try {
-            await axios.put(`/api/securities/${securityId}`, editData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            await axios.put(`/api/securities/${securityId}`, formData);
             saveBankDetails();
         } catch (error) {
             console.error('Error saving security:', error);

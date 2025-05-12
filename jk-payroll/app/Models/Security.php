@@ -57,7 +57,13 @@ class Security extends Model
         'securityEmergencyContactAddress',
         'securityEmergencyContactNumber',
         'securityAdditionalInfo',
-        'securityEpfNumber'
+        'securityEpfNumber',
+        
+        'resignationEffectiveDate',
+        'resignationReason',
+        'resignationAdditionalInfo',
+        'securityIsResigned',
+        'hasReturnedAllAssets',
     ];
 
     protected $casts = [
@@ -69,6 +75,10 @@ class Security extends Model
         'securityBirthCertificateUploaded' => 'boolean',
         'securityGramasewakaLetterUploaded' => 'boolean',
         'securityStatus' => 'integer',
+        'resignationEffectiveDate' => 'date',
+        'securityIsResigned' => 'boolean',
+        'hasReturnedAllAssets' => 'boolean',
+       
     ];
 
     public function locations()

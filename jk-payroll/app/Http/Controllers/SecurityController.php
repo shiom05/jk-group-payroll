@@ -8,12 +8,23 @@ use App\Http\Requests\UpdateSecurityRequest;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
+use Illuminate\Http\Request;
+
 class SecurityController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
+    {
+        $securities = Security::with('bankDetails')
+        ->where('securityIsResigned', false)
+        ->get();
+
+    return response()->json($securities);
+    }
+
+     public function getAllSecurities()
     {
         $securities = Security::with('bankDetails')->get();
         return response()->json($securities);   
@@ -67,6 +78,7 @@ class SecurityController extends Controller
             'securityEmergencyContactAddress' => ['required'],
             'securityEmergencyContactNumber' => ['required'],
             'securityAdditionalInfo' => ['nullable'],
+            'securityEpfNumber' => ['nullable'],
         ]);
 
         if ($validator->fails()) {
@@ -82,6 +94,15 @@ class SecurityController extends Controller
 
         if (isset($data['securityStatus'])) {
             $data['securityStatus'] = (int) $data['securityStatus'];
+        }
+
+         foreach ([
+        'securityNicUploaded',
+        'securityPoliceReportUploaded',
+        'securityBirthCertificateUploaded',
+        'securityGramasewakaLetterUploaded',
+        'securityMaritalStatus'] as $field) {
+            $data[$field] = filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN);
         }
 
         if ($request->hasFile('securityPhoto')) {
@@ -128,31 +149,81 @@ class SecurityController extends Controller
             'securityNicNumber' => ['required'],
             'securityPrimaryContact' => ['required'],
             'securitySecondaryContact' => ['required'],
-            'securityPhoto' => ['required'],
             'securityDateOfJoin' => ['required'],
-            
             'securityType' => ['required', 'in:LSO,OIC,JSO,SSO,CSO'],
             'securityPermanentAddress' => ['required'],
             'securityCurrentAddress' => ['required'],
             'securityGender' => ['required', 'in:male,female'],
             'securityDistrict' => ['required'],
             'securityPoliceDivision' => ['required'],
+            'securityStatus' => ['required'],
             'securityGramaNiladariDivision' => ['required'],
             'securityEducationalInfo' => ['required'],
-            'securityMaritalStatus' => ['required', 'boolean'],
+            'securityMaritalStatus' => ['required', function ($attribute, $value, $fail) {
+                if (!in_array($value, ['true', 'false', true, false])) {
+                    $fail('The '.$attribute.' field must be true or false.');
+                }
+            }],
             'securityPreviousWorkplace' => ['required'],
             'securityExperience' => ['required'],
             'securityEmergencyContactName' => ['required'],
             'securityEmergencyContactAddress' => ['required'],
             'securityEmergencyContactNumber' => ['required'],
             'securityAdditionalInfo' => ['nullable'],
+            'securityEpfNumber' => ['nullable'],
         ]);
+    
+            $checkboxFields = [
+                'securityNicUploaded',
+                'securityPoliceReportUploaded',
+                'securityBirthCertificateUploaded',
+                'securityGramasewakaLetterUploaded',
+            ];
 
-        Log::info("Validated data: ", $validatedData);
+                foreach ($checkboxFields as $field) {
+                $validatedData[$field] = filter_var($request->input($field), FILTER_VALIDATE_BOOLEAN);
+            }
 
+        if (isset($validatedData['securityStatus'])) {
+            $validatedData['securityStatus'] = (int) $request['securityStatus'];
+        }
+            
+        $validatedData['securityMaritalStatus'] = filter_var($validatedData['securityMaritalStatus'], FILTER_VALIDATE_BOOLEAN);
+
+    
         $security->update($validatedData);
         return response()->json($security);
     }
+
+
+    public function resign(Request $request, Security $security)
+{
+    $validator = Validator::make($request->all(), [
+        'resignationEffectiveDate' => 'required|date',
+        'resignationReason' => 'required|string',
+        'resignationAdditionalInfo' => 'nullable|string',
+        'hasReturnedAllAssets' => 'required|boolean',
+        'securityIsResigned' => 'required|boolean',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+    $security->update([
+        'resignationEffectiveDate' => $request->resignationEffectiveDate,
+        'resignationReason' => $request->resignationReason,
+        'resignationAdditionalInfo' => $request->resignationAdditionalInfo,
+        'hasReturnedAllAssets' => $request->hasReturnedAllAssets,
+        'securityIsResigned' => $request->securityIsResigned,
+        'securityStatus' => $request->securityStatus,
+    ]);
+
+    return response()->json([
+        'message' => 'Security resigned successfully.',
+        'data' => $security,
+    ]);
+}
 
     /**
      * Remove the specified resource from storage.
