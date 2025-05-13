@@ -29,5 +29,13 @@ export default interface Security {
     securityAdditionalInfo?: string;
     securityType: 'LSO' | 'OIC' | 'JSO' | 'SSO' | 'CSO';
     securityEpfNumber?: string;
-    bank_details: any
+    bank_details: any;
+
+    resignationEffectiveDate?: string | Date;
+    resignationReason?: string;
+    resignationAdditionalInfo?: string;
+    securityIsResigned?: boolean;
+    hasReturnedAllAssets?: boolean;
+    
+    
   }

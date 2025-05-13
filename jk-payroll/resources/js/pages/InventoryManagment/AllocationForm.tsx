@@ -165,7 +165,7 @@ const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryIte
                                   .filter((i) => i.quantity > 0)
                                   .map((i) => ({
                                       value: i.id,
-                                      label: `${i.inventory_type.name}${i.size ? ` (${i.size})` : ''} - $${i.purchase_price}`,
+                                      label: `${i.inventory_type.name}${i.size ? ` (${i.size})` : ''} - Rs ${i.purchase_price}`,
                                   }))}
                               value={selectedItemId}
                               onChange={(value) => setSelectedItemId(value)}

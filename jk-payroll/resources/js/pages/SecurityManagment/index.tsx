@@ -13,6 +13,7 @@ import { EyeOutlined, EditOutlined  } from '@ant-design/icons';
 import BlackMarksList from './BlackarkManagment/BlackMarksList';
 import SecurityTerminationForm from './ResignationManagment';
 import Title from 'antd/es/typography/Title';
+import { rehireSecurity } from '@/services/security-managment.service';
 
 
 const SecurityManagment = () => {
@@ -33,6 +34,7 @@ const SecurityManagment = () => {
 
     const onClose = () => {
         setOpen(false);
+        setToTerminateSecuritySelected(null);
     };
 
 
@@ -226,8 +228,8 @@ const SecurityManagment = () => {
                 <div className="flex justify-center gap-2">
                     <Button icon={<EyeOutlined />} size="middle" onClick={() => setToViewSecuritySelected(record)} >View</Button>
                    
-                    <Popconfirm title="Cancel Termination?" onConfirm={() => {showDrawer(); setToTerminateSecuritySelected(record);}} okText="Yes" cancelText="No">
-                          <Button>Cancel</Button>
+                    <Popconfirm title="Confirm Cancel Termination?" onConfirm={() => {rehireEmployee(record);}} okText="Yes" cancelText="No">
+                          <Button>Cancel Termination</Button>
                       </Popconfirm>
 
                     <Popconfirm title="Terminate Security" onConfirm={() => {showDrawer(); setToTerminateSecuritySelected(record);}} okText="Yes" cancelText="No">
@@ -238,6 +240,18 @@ const SecurityManagment = () => {
             ),
         },
     ];
+
+    const rehireEmployee = async(security:Security)=>{
+        const result = await rehireSecurity(security.securityId, {
+             resignationEffectiveDate: null,
+            resignationReason: null,
+            resignationAdditionalInfo: null,
+            securityIsResigned: false,
+            hasReturnedAllAssets: false
+        });
+        fetchSecurities();
+    }
+
     const columnsTerminated: ColumnsType<Security> = [
         {
             title: 'ID',
@@ -288,7 +302,7 @@ const SecurityManagment = () => {
                     
                      <Button icon={<EyeOutlined />} size="middle" onClick={() => setToViewSecuritySelected(record)} > View </Button>
                    
-                    <Popconfirm title="Rehire" onConfirm={() => {}} okText="Yes" cancelText="No">
+                    <Popconfirm title="Rehire" onConfirm={() => {rehireEmployee(record)}} okText="Yes" cancelText="No">
                           <Button >Rehire</Button>
                       </Popconfirm>
                     
@@ -386,11 +400,11 @@ const SecurityManagment = () => {
             {toEditSecuritySelected && <EditSecurity securityData={toEditSecuritySelected} back={() => setToEditSecuritySelected(null)} />}
 
             {toTerminateSecuritySelected && (
-                <Drawer title="Terminating Employee" closable={{ 'aria-label': 'Close Button' }} onClose={onClose} open={open} width={900}>
+                <Drawer title="Terminating Employee" closable={{ 'aria-label': 'Close Button' }} onClose={onClose} open={open} width={900}  maskClosable={false} >
                     <SecurityTerminationForm
                         security={toTerminateSecuritySelected}
                         onCancel={() => {
-                            setToTerminateSecuritySelected(null), onClose();
+                             onClose();
                         }}
                     />
                 </Drawer>

@@ -117,3 +117,6 @@ export const getSecurityCurrentMonthPayrollLoans = (securityId:any)=>{
 export const resignSecurity = (securityId:any, resignationData: any)=>{
     return axios.post(`/api/termination/securities/${securityId}/resign`, resignationData);
 }
+export const rehireSecurity = (securityId:any, resignationData: any)=>{
+    return axios.post(`/api/termination/securities/${securityId}/rehire`, resignationData);
+}

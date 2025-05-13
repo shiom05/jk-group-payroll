@@ -63,8 +63,12 @@ class SecurityAssetController extends Controller
 
                 if (!$securityAsset || $securityAsset->quantity < $item['quantity']) {
                     return response()->json([
-                        'message' => 'Return failed. Not enough allocated quantity for one or more items.',
-                        'failed_item' => $item
+                        'message' => 'Return failed. Returning more than allocated',
+                        'failed_item' => $item,
+                         'securityAsset' =>  $securityAsset, 
+                         '$validated'=> $validated,
+                         '$securityAsset->quantity'=>$securityAsset->quantity,
+
                     ], 400);
                 }
 
@@ -77,7 +81,7 @@ class SecurityAssetController extends Controller
                 }
             }
 
-            return response()->json(['message' => 'Items returned successfully']);
+            return response()->json(['message' => 'Items returned successfully', 'securityAsset' =>  $securityAsset, '$validated'=> $validated ]);
         });
     }
 

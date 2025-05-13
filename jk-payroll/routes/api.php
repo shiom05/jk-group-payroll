@@ -32,6 +32,7 @@ Route::prefix('api/bank-details')->group(function () {
 
 Route::prefix('api/termination')->group(function () {
     Route::post('/securities/{security}/resign', [SecurityController::class, 'resign']);
+    Route::post('/securities/{security}/rehire', [SecurityController::class, 'rehire']);
 });
 
 

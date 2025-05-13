@@ -50,6 +50,16 @@ export default function SecurityTerminationForm({
   useEffect(() => {
     if (security?.securityId) {
       fetchAssets();
+      
+      // Set initial form values if security is already resigned
+      if (security?.securityIsResigned) {
+        form.setFieldsValue({
+          resignationEffectiveDate: security.resignationEffectiveDate ? dayjs(security.resignationEffectiveDate) : null,
+          resignationReason: security.resignationReason,
+          resignationAdditionalInfo: security.resignationAdditionalInfo,
+        });
+        setHasReturnedAllAssets(security.hasReturnedAllAssets || false);
+      }
     }
   }, [security]);
 
@@ -68,26 +78,24 @@ export default function SecurityTerminationForm({
   };
 
   const handleFinish = async(values: any) => {
-    const {bank_details , ...rest} = security;
     const payload = {
       ...values,
       hasReturnedAllAssets,
       securityIsResigned: true,
-      securityStatus: hasReturnedAllAssets? 500: 400,
+      securityStatus: hasReturnedAllAssets ? 500 : 400,
       resignationEffectiveDate: values.resignationEffectiveDate.format('YYYY-MM-DD')
     };
-     console.log(payload);
-     try {
-          await resignSecurity(security.securityId, payload);
-        } catch (error) {
-            console.error('Error saving security:', error);
-        }
-
+    
+    try {
+      await resignSecurity(security.securityId, payload);
+    } catch (error) {
+      console.error('Error saving security:', error);
+    }
   };
 
   return (
     <div>
-    <Title type="danger" level={3} >Terminating {security.securityName}:  ({security.securityId}) </Title>
+      <Title type="danger" level={3}>Terminating {security.securityName}: ({security.securityId})</Title>
       <Divider orientation="left">Assigned Assets</Divider>
       {loading ? (
         <Text>Loading assets...</Text>
@@ -106,7 +114,7 @@ export default function SecurityTerminationForm({
         >
           <DatePicker
             style={{ width: '100%' }}
-              format="YYYY-MM-DD"
+            format="YYYY-MM-DD"
             disabledDate={(current) => current && current < dayjs().endOf('day')}
           />
         </Form.Item>

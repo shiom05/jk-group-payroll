@@ -64,7 +64,7 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
 
   const handleSubmit = async () => {
       const itemMap = data.items.map((itm: AllocationItem) => ({
-          id: itm.id,
+          id: itm.inventory_item_id,
           quantity: itm.removeQuantity,
       }));
 
@@ -77,7 +77,7 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
           security_id: data.security_id,
           items: data.items.map((itm: any) => {
               return {
-                  inventory_item_id: itm.id,
+                  inventory_item_id: itm.inventory_item_id,
                   quantity: itm.removeQuantity,
               };
           }),

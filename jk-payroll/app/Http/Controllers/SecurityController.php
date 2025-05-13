@@ -224,6 +224,22 @@ class SecurityController extends Controller
         'data' => $security,
     ]);
 }
+    public function rehire(Request $request, Security $security)
+{
+    $security->update([
+        'resignationEffectiveDate' => $request->resignationEffectiveDate,
+        'resignationReason' => $request->resignationReason,
+        'resignationAdditionalInfo' => $request->resignationAdditionalInfo,
+        'hasReturnedAllAssets' => $request->hasReturnedAllAssets,
+        'securityIsResigned' => $request->securityIsResigned,
+        'securityStatus' => $request->securityStatus,
+    ]);
+
+    return response()->json([
+        'message' => 'Security Rehired Successfully.',
+        'data' => $security,
+    ]);
+}
 
     /**
      * Remove the specified resource from storage.

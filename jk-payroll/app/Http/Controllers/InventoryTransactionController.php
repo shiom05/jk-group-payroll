@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateInventoryTransactionRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\Schema;
 use App\Models\InventoryItems;
 use Carbon\Carbon; 
 
@@ -180,64 +181,129 @@ class InventoryTransactionController extends Controller
         // }
 
         public function returnInventory(Request $request)
-{
-    $validated = $request->validate([
-        'security_id' => 'required|exists:securities,securityId',
-        'items' => 'required|array|min:1',
-        'items.*.id' => 'required|exists:inventory_items,id',
-        'items.*.quantity' => 'required|integer|min:1',
-        'transaction_date' => 'required|date',
-    ]);
-
-    return DB::transaction(function () use ($validated) {
-        $transaction = InventoryTransaction::create([
-            'type' => 'return',
-            'security_id' => $validated['security_id'],
-            'transaction_date' => $validated['transaction_date'],
-            'notes' => "Return items"
-        ]);
-
-        foreach ($validated['items'] as $item) {
-            $originalItem = InventoryItems::find($item['id']);
-
-            // Search for an existing returned item with the same inventory_type_id and size
-            $existingReturnedItem = InventoryItems::where('inventory_type_id', $originalItem->inventory_type_id)
-                ->where('size', $originalItem->size)
-                ->where('condition', 'returned')
-                ->first();
-
-            if ($existingReturnedItem) {
-                // Just increase the quantity
-                $existingReturnedItem->quantity += $item['quantity'];
-                $existingReturnedItem->save();
-
-                $usedItem = $existingReturnedItem;
-            } else {
-                // Create a new returned item record
-                $returnedItem = $originalItem->replicate();
-                $returnedItem->condition = 'returned';
-                $returnedItem->quantity = $item['quantity'];
-                $returnedItem->is_available = true; // you might want to explicitly mark it available
-                $returnedItem->save();
-
-                $usedItem = $returnedItem;
-            }
-
-            // Log the return in inventory transactions
-            $transaction->items()->create([
-                'inventory_item_id' => $usedItem->id,
-                'quantity' => $item['quantity'],
-                'unit_price' => $usedItem->current_value,
-                'condition' => 'returned'
+        {
+            $validated = $request->validate([
+                'security_id' => 'required|exists:securities,securityId',
+                'items' => 'required|array|min:1',
+                'items.*.id' => 'required|exists:inventory_items,id',
+                'items.*.quantity' => 'required|integer|min:1',
+                'transaction_date' => 'required|date',
             ]);
+
+            return DB::transaction(function () use ($validated) {
+                $transaction = InventoryTransaction::create([
+                    'type' => 'return',
+                    'security_id' => $validated['security_id'],
+                    'transaction_date' => $validated['transaction_date'],
+                    'notes' => "Return items"
+                ]);
+
+                foreach ($validated['items'] as $item) {
+                    $originalItem = InventoryItems::find($item['id']);
+
+                    // Search for an existing returned item with the same inventory_type_id and size
+                    $existingReturnedItem = InventoryItems::where('inventory_type_id', $originalItem->inventory_type_id)
+                        ->where('size', $originalItem->size)
+                        ->where('condition', 'returned')
+                        ->first();
+
+                    if ($existingReturnedItem) {
+                        // Just increase the quantity
+                        $existingReturnedItem->quantity += $item['quantity'];
+                        $existingReturnedItem->save();
+
+                        $usedItem = $existingReturnedItem;
+                    } else {
+                        // Create a new returned item record
+                        $returnedItem = $originalItem->replicate();
+                        $returnedItem->purchase_price =  $originalItem->purchase_price / 2;
+                        $returnedItem->condition = 'returned';
+                        $returnedItem->quantity = $item['quantity'];
+                        $returnedItem->is_available = true; // you might want to explicitly mark it available
+                        $returnedItem->save();
+
+                        $usedItem = $returnedItem;
+                    }
+
+                    // Log the return in inventory transactions
+                    $transaction->items()->create([
+                        'inventory_item_id' => $usedItem->id,
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $usedItem->current_value,
+                        'condition' => 'returned'
+                    ]);
+                }
+
+                return response()->json([
+                    'message' => 'Items returned successfully',
+                    'transaction_id' => $transaction->id,
+                    'transaction'=> $transaction
+                ]);
+            });
         }
 
-        return response()->json([
-            'message' => 'Items returned successfully',
-            'transaction_id' => $transaction->id
-        ]);
-    });
-}
+    //  public function returnInventory(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'security_id' => 'required|exists:securities,securityId',
+    //         'items' => 'required|array|min:1',
+    //         'items.*.id' => 'required|exists:inventory_items,id',
+    //         'items.*.quantity' => 'required|integer|min:1',
+    //         'transaction_date' => 'required|date',
+    //     ]);
+
+    //     return DB::transaction(function () use ($validated) {
+    //         $transaction = InventoryTransaction::create([
+    //             'type' => 'return',
+    //             'security_id' => $validated['security_id'],
+    //             'transaction_date' => $validated['transaction_date'],
+    //             'notes' => "Return items"
+    //         ]);
+
+    //         foreach ($validated['items'] as $item) {
+    //             $originalItem = InventoryItems::findOrFail($item['id']);
+                
+    //             // Verify original item has sufficient quantity
+    //             if ($originalItem->quantity < $item['quantity']) {
+    //                 throw new \Exception("Not enough quantity available for item {$originalItem->id}");
+    //             }
+
+    //             // Find or create returned item
+    //             $returnedItem = InventoryItems::firstOrNew([
+    //                 'inventory_type_id' => $originalItem->inventory_type_id,
+    //                 'size' => $originalItem->size,
+    //                 'condition' => 'returned'
+    //             ], [
+    //                 'purchase_price' => $originalItem->purchase_price / 2, // Half price
+    //                 'purchase_date' => now(),
+    //                 'is_available' => true,
+    //                 'last_restocked_at' => now()
+    //             ]);
+
+    //             // Update returned item
+    //             $returnedItem->quantity += $item['quantity'];
+    //             $returnedItem->save();
+
+    //             // Create transaction item
+    //             $transaction->items()->create([
+    //                 'inventory_item_id' => $returnedItem->id,
+    //                 'quantity' => $item['quantity'],
+    //                 'unit_price' => $returnedItem->purchase_price,
+    //                 'condition' => 'returned'
+    //             ]);
+
+    //             // Reduce original item quantity
+    //             $originalItem->quantity -= $item['quantity'];
+    //             $originalItem->save();
+    //         }
+
+    //         return response()->json([
+    //             'message' => 'Items returned successfully',
+    //             'transaction_id' => $transaction->id,
+    //             'transaction' => $transaction
+    //         ]);
+    //     });
+    // }
 
 
     /**

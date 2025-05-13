@@ -14,8 +14,6 @@ return new class extends Migration
        // database/migrations/YYYY_MM_DD_create_inventory_transaction_items_table.php
         Schema::create('inventory_transaction_items', function (Blueprint $table) {
             $table->id();
-            // $table->foreignId('transaction_id')->constrained('inventory_transactions')->onDelete('cascade');
-              // 👑 Corrected column name
             $table->foreignId('inventory_transaction_id')->constrained('inventory_transactions')->onDelete('cascade');
             
             $table->foreignId('inventory_item_id')->constrained()->onDelete('cascade');
@@ -25,7 +23,7 @@ return new class extends Migration
             $table->timestamps();
             
             // Add composite index for better query performance
-            $table->index(['transaction_id', 'inventory_item_id']);
+            $table->index(['inventory_transaction_id', 'inventory_item_id']);
         });
     }
 
