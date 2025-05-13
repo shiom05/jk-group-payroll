@@ -6,7 +6,7 @@ import Security from '@/types/jk/security';
 import ViewSecurity from './ViewSecurity';
 import { getStatusText } from '@/utils/security';
 import EditSecurity from './EditSecurity';
-import { Table, Button, Tag, Popconfirm, Drawer, Divider } from 'antd';
+import { Table, Button, Tag, Popconfirm, Drawer, Divider, Tabs, TabsProps } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 
 import { EyeOutlined, EditOutlined  } from '@ant-design/icons';
@@ -14,6 +14,8 @@ import BlackMarksList from './BlackarkManagment/BlackMarksList';
 import SecurityTerminationForm from './ResignationManagment';
 import Title from 'antd/es/typography/Title';
 import { rehireSecurity } from '@/services/security-managment.service';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 
 const SecurityManagment = () => {
@@ -27,7 +29,12 @@ const SecurityManagment = () => {
     const [toViewSecuritySelected, setToViewSecuritySelected] = useState<Security | null>(null)
     const [toEditSecuritySelected, setToEditSecuritySelected] = useState<Security | null>(null)
     const [open, setOpen] = useState(false);
-    const [toTerminateSecuritySelected, setToTerminateSecuritySelected] = useState<Security | null>(null)
+    const [toTerminateSecuritySelected, setToTerminateSecuritySelected] = useState<Security | null>(null);
+
+    
+  const [loading, setLoading] = useState(false);
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
+  
     const showDrawer = () => {
         setOpen(true);
     };
@@ -39,6 +46,7 @@ const SecurityManagment = () => {
 
 
     const fetchSecurities = async () => {
+        setLoading(true)
         try {
             const response = await axios.get('/api/all/securities');
             const data = response.data;
@@ -52,6 +60,8 @@ const SecurityManagment = () => {
             setSecuritiesTerminated(terminated);
         } catch (error) {
             console.error('Error fetching securities:', error);
+        }finally{
+            setLoading(false);
         }
     };
 
@@ -242,14 +252,24 @@ const SecurityManagment = () => {
     ];
 
     const rehireEmployee = async(security:Security)=>{
-        const result = await rehireSecurity(security.securityId, {
+        setLoading(true)
+        try {
+            const result = await rehireSecurity(security.securityId, {
              resignationEffectiveDate: null,
-            resignationReason: null,
-            resignationAdditionalInfo: null,
-            securityIsResigned: false,
-            hasReturnedAllAssets: false
+             resignationReason: null,
+             resignationAdditionalInfo: null,
+             securityIsResigned: false,
+             hasReturnedAllAssets: false,
+             securityStatus: 200
         });
-        fetchSecurities();
+              fetchSecurities();
+              notifySuccess('SUCCESS', 'Succesfullt Rehired Security');
+        } catch (error) {
+             notifyError('ERROR', 'Something Went Wrong , Please Try Again Later!');
+        }finally{
+            setLoading(false)
+        }
+      
     }
 
     const columnsTerminated: ColumnsType<Security> = [
@@ -311,6 +331,93 @@ const SecurityManagment = () => {
         },
     ];
 
+
+const items: TabsProps['items'] = [
+    {
+        key: '1',
+        label: (<Title level={2}><Tag color={'green'}>{"Active Securities "}</Tag></Title>),
+        children: (
+            <>
+                <Divider orientation="left">
+                    {' '}
+                    <Title level={3}>Active Securities</Title>{' '}
+                </Divider>
+                <Table
+                    columns={columns}
+                    dataSource={securities}
+                    rowKey="securityId"
+                    pagination={false}
+                    className="rounded-lg shadow-lg"
+                    scroll={{ x: true }}
+                    locale={{ emptyText: 'No Securities .....' }}
+                />
+            </>
+        ),
+    },
+    {
+        key: '2',
+        label: <Title level={2}><Tag color={'yellow'}>{"Pending Securities "}</Tag></Title>,
+        children: (
+            <div className="">
+                <Divider orientation="left">
+                    {' '}
+                    <Title level={3}>Pending Securities</Title>{' '}
+                </Divider>
+                <Table
+                    columns={columnsPending}
+                    dataSource={securitiesPending}
+                    rowKey="securityId"
+                    pagination={false}
+                    className="rounded-lg shadow-lg"
+                    scroll={{ x: true }}
+                    locale={{ emptyText: 'No Securities .....' }}
+                />
+            </div>
+        ),
+    },
+    {
+        key: '3',
+        label: <Title level={2}><Tag color={'pink'}>{"In Active Securities "}</Tag></Title>,
+        children: (
+            <div className="">
+                <Divider orientation="left">
+                    {' '}
+                    <Title level={3}>Inactive Securities</Title>{' '}
+                </Divider>
+                <Table
+                    columns={columnsInactive}
+                    dataSource={securitiesInactive}
+                    rowKey="securityId"
+                    pagination={false}
+                    className="rounded-lg shadow-lg"
+                    scroll={{ x: true }}
+                    locale={{ emptyText: 'No Securities .....' }}
+                />
+            </div>
+        ),
+    },
+    {
+        key: '4',
+        label: <Title level={2}><Tag color={'red'}>{"Terminated Securities "}</Tag></Title>,
+        children: (
+            <div className="">
+                <Divider orientation="left">
+                    {' '}
+                    <Title level={3}>Terminated Securities</Title>{' '}
+                </Divider>
+                <Table
+                    columns={columnsTerminated}
+                    dataSource={securitiesTerminated}
+                    rowKey="securityId"
+                    pagination={false}
+                    className="rounded-lg shadow-lg"
+                    scroll={{ x: true }}
+                    locale={{ emptyText: 'No Securities .....' }}
+                />
+            </div>
+        ),
+    },
+];
    
       
 
@@ -320,6 +427,8 @@ const SecurityManagment = () => {
 
     return (
         <Layout>
+                {loading && <Loader/>}
+      {contextHolder}
             {!toViewSecuritySelected && !toEditSecuritySelected && (
                 <div className="min-h-screen p-6">
                     <h1 className="mb-4 text-3xl font-bold text-gray-800">Security Managment</h1>
@@ -333,67 +442,11 @@ const SecurityManagment = () => {
                         + Add New Security
                     </button>
 
-                    <Divider orientation="left">
-                        {' '}
-                        <Title level={3}>Active Securities</Title>{' '}
-                    </Divider>
-                    <Table
-                        columns={columns}
-                        dataSource={securities}
-                        rowKey="securityId"
-                        pagination={false}
-                        className="rounded-lg shadow-lg"
-                        scroll={{ x: true }}
-                        locale={{ emptyText: 'No Securities .....' }}
-                    />
+                  
 
-                    <div className="mt-14">
-                        <Divider orientation="left">
-                            {' '}
-                            <Title level={3}>Pending Securities</Title>{' '}
-                        </Divider>
-                        <Table
-                            columns={columnsPending}
-                            dataSource={securitiesPending}
-                            rowKey="securityId"
-                            pagination={false}
-                            className="rounded-lg shadow-lg"
-                            scroll={{ x: true }}
-                            locale={{ emptyText: 'No Securities .....' }}
-                        />
-                    </div>
-
-                    <div className="mt-14">
-                        <Divider orientation="left">
-                            {' '}
-                            <Title level={3}>Inactive Securities</Title>{' '}
-                        </Divider>
-                        <Table
-                            columns={columnsInactive}
-                            dataSource={securitiesInactive}
-                            rowKey="securityId"
-                            pagination={false}
-                            className="rounded-lg shadow-lg"
-                            scroll={{ x: true }}
-                            locale={{ emptyText: 'No Securities .....' }}
-                        />
-                    </div>
-                    <div className="mt-14">
-                        <Divider orientation="left">
-                            {' '}
-                            <Title level={3}>Terminated Securities</Title>{' '}
-                        </Divider>
-                        <Table
-                            columns={columnsTerminated}
-                            dataSource={securitiesTerminated}
-                            rowKey="securityId"
-                            pagination={false}
-                            className="rounded-lg shadow-lg"
-                            scroll={{ x: true }}
-                            locale={{ emptyText: 'No Securities .....' }}
-                        />
-                    </div>
+                     <Tabs defaultActiveKey="1" items={items}  />
                 </div>
+                
             )}
 
             {toViewSecuritySelected && <ViewSecurity security={toViewSecuritySelected} back={() => setToViewSecuritySelected(null)} />}
@@ -405,6 +458,7 @@ const SecurityManagment = () => {
                         security={toTerminateSecuritySelected}
                         onCancel={() => {
                              onClose();
+                             fetchSecurities()
                         }}
                     />
                 </Drawer>

@@ -5,6 +5,8 @@ import { getAsset, resignSecurity } from '@/services/security-managment.service'
 import Security from '@/types/jk/security';
 import Title from 'antd/es/typography/Title';
 import axios from 'axios';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -46,7 +48,7 @@ export default function SecurityTerminationForm({
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasReturnedAllAssets, setHasReturnedAllAssets] = useState(false);
-
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
   useEffect(() => {
     if (security?.securityId) {
       fetchAssets();
@@ -85,16 +87,27 @@ export default function SecurityTerminationForm({
       securityStatus: hasReturnedAllAssets ? 500 : 400,
       resignationEffectiveDate: values.resignationEffectiveDate.format('YYYY-MM-DD')
     };
-    
+     setLoading(true);
     try {
       await resignSecurity(security.securityId, payload);
+      notifySuccess('SUCCESS', 'Succesfullt Terminated Security');
+      setTimeout(()=>{
+        onCancel()
+      },2000)
+      
     } catch (error) {
       console.error('Error saving security:', error);
+      notifyError('ERROR', 'Something Went Wrong , Please Try Again Later!');
+   
+    }finally{
+       setLoading(false);
     }
   };
 
   return (
     <div>
+       {loading && <Loader/>}
+      {contextHolder}
       <Title type="danger" level={3}>Terminating {security.securityName}: ({security.securityId})</Title>
       <Divider orientation="left">Assigned Assets</Divider>
       {loading ? (
