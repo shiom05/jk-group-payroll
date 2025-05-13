@@ -1,17 +1,20 @@
 // src/hooks/useNotification.ts
 import { notification } from 'antd';
 import type { NotificationPlacement } from 'antd/es/notification/interface';
+import React from 'react';
 
 type NotificationType = 'success' | 'error';
 
 const useNotification = () => {
+  const [api, contextHolder] = notification.useNotification();
+
   const openNotification = (
     type: NotificationType,
     title: string,
     description: string,
     placement: NotificationPlacement = 'topRight'
   ) => {
-    notification[type]({
+    api[type]({
       message: title,
       description,
       placement,
@@ -29,6 +32,7 @@ const useNotification = () => {
   return {
     notifySuccess,
     notifyError,
+    contextHolder,
   };
 };
 

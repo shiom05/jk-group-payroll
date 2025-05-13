@@ -1,11 +1,16 @@
 import Layout from '@/layouts/Layout';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { router } from '@inertiajs/react';
 import { Alert } from '@/components/ui/alert';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 const CreateSecurity = () => {
-    const [showAlert, setShowAlert] = useState<boolean>();
+    
+    const [showAlert, setShowAlert] = useState<boolean>(false);
+      const { notifySuccess, notifyError, contextHolder } = useNotification();
+    
     const [formData, setFormData] = useState<any>({
         securityName: '',
         securityDob: '',
@@ -85,13 +90,15 @@ const CreateSecurity = () => {
                 },
             });
             console.log(response.data);
-            setShowAlert(true)
+            setShowAlert(false);
+            notifySuccess('SUCCESS', 'Bank Details Saved Successfully')
             setTimeout(()=>{
-                setShowAlert(false)
                 router.get("/security-management");
-            },5000)
+            },3000)
         } catch (error) {
             console.error('Error saving bank details:', error);
+             setShowAlert(false);
+             notifyError('ERROR', 'Something Went Wrong Saving Bank Details, Please Try Again To Save Bank Details!')
         }
     }
 
@@ -105,7 +112,7 @@ const CreateSecurity = () => {
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
-        
+         setShowAlert(true);
         const data = new FormData();
         // Add all form data
         for (const key in formData) {
@@ -129,16 +136,19 @@ const CreateSecurity = () => {
                 },
             });
             console.log(response.data);
+            notifySuccess('SUCCESS', 'Create Security Completed Successfully')
             saveBankDetails(response.data.securityId);
             // createLeaveBalanceRecord(response.data.securityId);
         } catch (error) {
             console.error('Error saving security:', error);
+             setShowAlert(false)
+             notifyError('ERROR', 'Something Went Wrong, Please Try Again')
         }
-    };
-
+    }; 
     return (
         <Layout>
-            {showAlert && <Alert variant={'default'} />}
+            {contextHolder}
+            {showAlert && <Loader/>}
             <div className="pt-20 pb-20">
                 <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-4 rounded-lg bg-white p-6 py-10 shadow-lg">
                     <h2 className="mb-4 text-2xl font-semibold text-gray-700">Security Personnel Form</h2>
