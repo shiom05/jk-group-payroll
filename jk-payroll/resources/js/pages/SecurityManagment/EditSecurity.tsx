@@ -6,6 +6,28 @@ import { Alert } from '@/components/ui/alert';
 import Security from '@/types/jk/security';
 import { getBankDetails } from '@/services/security-managment.service';
 import { formatDateForInput } from '@/utils/security';
+import { 
+  Form, 
+  Input, 
+  DatePicker, 
+  Radio, 
+  Checkbox, 
+  Select, 
+  Upload, 
+  Button, 
+  Card, 
+  Divider,
+  Row,
+  Col
+} from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
+import Loader from '@/components/ui/loader';
+import useNotification from '@/hooks/useNotification';
+
+const { TextArea } = Input;
+const { Option } = Select;
 
 interface editProps {
     securityData: Security,
@@ -13,8 +35,14 @@ interface editProps {
 }
 
 const EditSecurity = ({ securityData, back }: editProps) => {
+    const [form] = Form.useForm();
+    const [bankForm] = Form.useForm();
     const { securityId } = securityData;
-    const [showAlert, setShowAlert] = useState<boolean>(false);
+    const [fileList, setFileList] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+
+     const { notifySuccess, notifyError, contextHolder } = useNotification();
+
     const [formData, setFormData] = useState<any>({
         securityName: '',
         securityDob: '',
@@ -28,7 +56,6 @@ const EditSecurity = ({ securityData, back }: editProps) => {
         securityGramasewakaLetterUploaded: false,
         securityStatus: 300,
         securityDateOfJoin: '',
-        // New fields
         securityGender: 'male',
         securityDistrict: '',
         securityPoliceDivision: '',
@@ -41,83 +68,110 @@ const EditSecurity = ({ securityData, back }: editProps) => {
         securityEmergencyContactAddress: '',
         securityEmergencyContactNumber: '',
         securityAdditionalInfo: '',
-        securityEpfNumber: '', // Only editable in edit mode
+        securityEpfNumber: '',
+        securityCurrentAddress: '',
+        securityPermanentAddress: '',
+        securityType: 'LSO',
     });
 
     const [bankDetails, setBankDetails] = useState<any>({
         bank_name: '',
         bank_branch: '',
         account_number: '',
-        // New bank fields
         bank_account_holder_name: '',
         is_commercial_bank: false,
     });
 
-    const handleBankDetailChange = (e: any) => {
-        const { name, value, type, checked } = e.target;
-        setBankDetails({
-            ...bankDetails,
-            [name]: type === 'checkbox' ? checked : value,
-        });
+    const handleBankDetailChange = (changedValues: any, allValues: any) => {
+        setBankDetails(allValues);
     };
 
-    const handleChange = (e: any) => {
-        const { name, value, type, checked } = e.target;
-        setFormData({
-            ...formData,
-            [name]: type === 'checkbox' ? checked : value,
-        });
+    const handleChange = (changedValues: any, allValues: any) => {
+        // Update security status if all documents are uploaded
+        if (changedValues.securityNicUploaded !== undefined || 
+            changedValues.securityPoliceReportUploaded !== undefined ||
+            changedValues.securityBirthCertificateUploaded !== undefined ||
+            changedValues.securityGramasewakaLetterUploaded !== undefined) {
+            
+            const allDocumentsUploaded = 
+                (changedValues.securityNicUploaded ?? formData.securityNicUploaded) && 
+                (changedValues.securityPoliceReportUploaded ?? formData.securityPoliceReportUploaded) && 
+                (changedValues.securityBirthCertificateUploaded ?? formData.securityBirthCertificateUploaded) && 
+                (changedValues.securityGramasewakaLetterUploaded ?? formData.securityGramasewakaLetterUploaded);
+            
+            if (allDocumentsUploaded) {
+                allValues.securityStatus = 200;
+            } else {
+                allValues.securityStatus = 300;
+            }
+        }
+        
+        setFormData(allValues);
     };
 
-    const handleFileChange = (e: any) => {
-        setFormData({
-            ...formData,
-            securityPhoto: e.target.files[0],
-        });
+    const handleFileChange = (info: any) => {
+        let fileList = [...info.fileList];
+        fileList = fileList.slice(-1);
+        setFileList(fileList);
+        if (fileList.length > 0) {
+            setFormData({
+                ...formData,
+                securityPhoto: fileList[0].originFileObj,
+            });
+        }
     };
 
     const saveBankDetails = async () => {
         try {
             await axios.put(`/api/bank-details/${securityId}`, {...bankDetails, security_id: securityId});
+            notifySuccess('SUCCESS', 'Bank details updated successfully');
             setTimeout(() => {
                 router.get('/security-management');
-            }, 5000);
+            }, 2000);
         } catch (error) {
             console.error('Error saving bank details:', error);
+            notifyError('ERROR', 'Something Went Wrong Updating Bank Details, Please Try Again To Save Bank Details!');
         }
     };
 
-    const handleSubmit = async (e: any) => {
-        e.preventDefault();
-        
-
-        for (const key in formData) {
-             console.log("...")
- 
-           if (key === 'securityStatus') {
-                if (formData['securityNicUploaded'] && formData['securityPoliceReportUploaded'] && 
-                    formData['securityBirthCertificateUploaded'] && formData['securityGramasewakaLetterUploaded']) {
-                    formData['securityStatus'] = 200;
-                    console.log("...")
-                }
-            }
-        }
-        
+    const onFinish = async (values: any) => {
+        setLoading(true);        
         try {
-            await axios.put(`/api/securities/${securityId}`, formData);
-            saveBankDetails();
+            // Update security status based on document uploads
+            if (formData.securityNicUploaded && formData.securityPoliceReportUploaded && 
+                formData.securityBirthCertificateUploaded && formData.securityGramasewakaLetterUploaded) {
+                values.securityStatus = 200;
+            } else {
+                values.securityStatus = 300;
+            }
+
+            if (values['securityPhoto']['fileList'] && values['securityPhoto']['fileList'].length>0) {
+               values.securityPhoto = values['securityPhoto'].fileList[0]?.originFileObj ;
+            }
+
+            if( values['securityPhoto']['file'] &&  (values['securityPhoto']['fileList'] && values['securityPhoto']['fileList'].length === 0)){
+                setLoading(false);
+                return;
+                // throw new Error("SecurityPhoto Removed or Not Uploaded")
+            }
+            await axios.put(`/api/securities/${securityId}`, values);
+            await saveBankDetails();
+            console.log("Security: ",values);
+            console.log("Bank Details: ",{...bankDetails, security_id: securityId});
+            notifySuccess('SUCCESS', 'Security personnel updated successfully');
         } catch (error) {
-            console.error('Error saving security:', error);
+             notifyError('ERROR', 'Something Went Wrong, Failed to update security personnel, Please Try Again');
+        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
         const fetchSecurityData = async () => {
             try {
-                setFormData({
-                    ...formData,
+                const initialFormData = {
                     securityName: securityData.securityName,
-                    securityDob: formatDateForInput(securityData.securityDob),
+                    securityDob: dayjs(securityData.securityDob),
                     securityNicNumber: securityData.securityNicNumber,
                     securityPrimaryContact: securityData.securityPrimaryContact,
                     securitySecondaryContact: securityData.securitySecondaryContact,
@@ -127,11 +181,9 @@ const EditSecurity = ({ securityData, back }: editProps) => {
                     securityBirthCertificateUploaded: securityData.securityBirthCertificateUploaded,
                     securityGramasewakaLetterUploaded: securityData.securityGramasewakaLetterUploaded,
                     securityStatus: securityData.securityStatus,
-                    securityDateOfJoin: formatDateForInput(securityData.securityDateOfJoin),
-                    
+                    securityDateOfJoin: dayjs(securityData.securityDateOfJoin),
                     securityCurrentAddress: securityData.securityCurrentAddress,
-                    securityPermanentAddress:  securityData.securityPermanentAddress,
-                    // New fields
+                    securityPermanentAddress: securityData.securityPermanentAddress,
                     securityType: securityData.securityType,
                     securityGender: securityData.securityGender || 'male',
                     securityDistrict: securityData.securityDistrict || '',
@@ -145,19 +197,34 @@ const EditSecurity = ({ securityData, back }: editProps) => {
                     securityEmergencyContactAddress: securityData.securityEmergencyContactAddress || '',
                     securityEmergencyContactNumber: securityData.securityEmergencyContactNumber || '',
                     securityAdditionalInfo: securityData.securityAdditionalInfo || '',
-                    securityEpfNumber: securityData.securityEpfNumber || '', // EPF number from existing data
-                });
+                    securityEpfNumber: securityData.securityEpfNumber || '',
+                };
+
+                setFormData(initialFormData);
+                form.setFieldsValue(initialFormData);
 
                 const bankRes = await getBankDetails(securityId);
                 const bankData = bankRes.data;
 
-                setBankDetails({
+                const initialBankData = {
                     bank_name: bankData.bank_name || '',
                     bank_branch: bankData.bank_branch || '',
                     account_number: bankData.account_number || '',
                     bank_account_holder_name: bankData.bank_account_holder_name || '',
                     is_commercial_bank: bankData.is_commercial_bank || false,
-                });
+                };
+
+                setBankDetails(initialBankData);
+                bankForm.setFieldsValue(initialBankData);
+
+                if (securityData.securityPhoto) {
+                    setFileList([{
+                        uid: '-1',
+                        name: `Click to View Me`,
+                        status: 'done',
+                        url: `storage/${securityData.securityPhoto}`,
+                    }]);
+                }
             } catch (error) {
                 console.error('Error fetching security data:', error);
             }
@@ -168,424 +235,357 @@ const EditSecurity = ({ securityData, back }: editProps) => {
 
     return (
         
-         <>
-            {/* {showAlert && <Alert variant={'default'} />} */}
-            <div className='pt-20 pb-20'>
-                <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-4 rounded-lg p-10 bg-white shadow-lg">
-                    <h2 className="mb-4 text-2xl font-semibold text-gray-700">Edit Security Personnel</h2>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Existing fields */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Name:</label>
-                            <input
-                                type="text"
+        <div className='pt-20 pb-20 mx-auto max-w-3xl space-y-4 rounded-lg bg-white p-6 py-10 shadow-lg'>
+            {contextHolder}
+            {loading && <Loader/>}
+            <Card 
+                title="Edit Security Personnel" 
+                className="mx-auto max-w-3xl"
+                extra={
+                    <Button onClick={back}>
+                        Cancel
+                    </Button>
+                }
+            >
+                <Form
+                    form={form}
+                    layout="vertical"
+                    onFinish={onFinish}
+                    onValuesChange={handleChange}
+                    initialValues={formData}
+                >
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Name"
                                 name="securityName"
-                                value={formData.securityName}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Security Type:</label>
-                            <select
-                                name="securityType"
-                                value={formData.securityType}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
+                                rules={[{ required: true, message: 'Please enter name' }]}
                             >
-                                <option value="LSO">LSO</option>
-                                <option value="OIC">OIC</option>
-                                <option value="JSO">JSO</option>
-                                <option value="SSO">SSO</option>
-                                <option value="CSO">CSO</option>
-                            </select>
-                        </div>
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Security Type"
+                                name="securityType"
+                                rules={[{ required: true, message: 'Please select security type' }]}
+                            >
+                                <Select>
+                                    <Option value="LSO">LSO</Option>
+                                    <Option value="OIC">OIC</Option>
+                                    <Option value="JSO">JSO</Option>
+                                    <Option value="SSO">SSO</Option>
+                                    <Option value="CSO">CSO</Option>
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Date of Birth:</label>
-                            <input
-                                type="date"
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Date of Birth"
                                 name="securityDob"
-                                value={formData.securityDob}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">NIC Number:</label>
-                            <input
-                                type="text"
+                                rules={[{ required: true, message: 'Please select date of birth' }]}
+                            >
+                                <DatePicker className="w-full" format="YYYY-MM-DD" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                label="NIC Number"
                                 name="securityNicNumber"
-                                value={formData.securityNicNumber}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                                rules={[{ required: true, message: 'Please enter NIC number' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                        
+                    <Form.Item
+                        label="Current Address"
+                        name="securityCurrentAddress"
+                        rules={[{ required: true, message: 'Please enter current address' }]}
+                    >
+                        <TextArea rows={3} />
+                    </Form.Item>
 
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Current Address:</label>
-                            <textarea
-                                name="securityCurrentAddress"
-                                value={formData.securityCurrentAddress}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                    <Form.Item
+                        label="Permanent Address"
+                        name="securityPermanentAddress"
+                        rules={[{ required: true, message: 'Please enter permanent address' }]}
+                    >
+                        <TextArea rows={3} />
+                    </Form.Item>
 
-                        
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Primary Contact"
+                                name="securityPrimaryContact"
+                                rules={[{ required: true, message: 'Please enter primary contact' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Secondary Contact"
+                                name="securitySecondaryContact"
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Permanent Address:</label>
-                            <textarea
-                                name="securityPermanentAddress"
-                                value={formData.securityPermanentAddress}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                    <Form.Item
+                        label="EPF Number"
+                        name="securityEpfNumber"
+                    >
+                        <Input />
+                    </Form.Item>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">EPF Number:</label>
-                            <input
-                                type="text"
-                                name="securityEpfNumber"
-                                value={formData.securityEpfNumber}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                    <Form.Item
+                        label="Gender"
+                        name="securityGender"
+                        rules={[{ required: true, message: 'Please select gender' }]}
+                    >
+                        <Radio.Group>
+                            <Radio value="male">Male</Radio>
+                            <Radio value="female">Female</Radio>
+                        </Radio.Group>
+                    </Form.Item>
 
-                        {/* New fields section */}
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Gender:</label>
-                            <div className="mt-2 flex gap-4">
-                                <label className="inline-flex items-center">
-                                    <input
-                                        type="radio"
-                                        name="securityGender"
-                                        value="male"
-                                        checked={formData.securityGender === 'male'}
-                                        onChange={handleChange}
-                                        className="h-4 w-4 text-blue-600 focus:ring focus:ring-blue-300"
-                                    />
-                                    <span className="ml-2">Male</span>
-                                </label>
-                                <label className="inline-flex items-center">
-                                    <input
-                                        type="radio"
-                                        name="securityGender"
-                                        value="female"
-                                        checked={formData.securityGender === 'female'}
-                                        onChange={handleChange}
-                                        className="h-4 w-4 text-blue-600 focus:ring focus:ring-blue-300"
-                                    />
-                                    <span className="ml-2">Female</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">District:</label>
-                            <input
-                                type="text"
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                label="District"
                                 name="securityDistrict"
-                                value={formData.securityDistrict}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Police Division:</label>
-                            <input
-                                type="text"
+                                rules={[{ required: true, message: 'Please enter district' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Police Division"
                                 name="securityPoliceDivision"
-                                value={formData.securityPoliceDivision}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                                rules={[{ required: true, message: 'Please enter police division' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Grama Niladari Division:</label>
-                            <input
-                                type="text"
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Grama Niladari Division"
                                 name="securityGramaNiladariDivision"
-                                value={formData.securityGramaNiladariDivision}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Educational Info:</label>
-                            <input
-                                type="text"
+                                rules={[{ required: true, message: 'Please enter grama niladari division' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Educational Info"
                                 name="securityEducationalInfo"
-                                value={formData.securityEducationalInfo}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                                rules={[{ required: true, message: 'Please enter educational info' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                        <div>
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    name="securityMaritalStatus"
-                                    checked={formData.securityMaritalStatus}
-                                    onChange={handleChange}
-                                    className="h-4 w-4 text-blue-600 focus:ring focus:ring-blue-300"
-                                />
-                                <span>Married</span>
-                            </label>
-                        </div>
+                    <Form.Item
+                        name="securityMaritalStatus"
+                        valuePropName="checked"
+                    >
+                        <Checkbox>Married</Checkbox>
+                    </Form.Item>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Previous Workplace:</label>
-                            <input
-                                type="text"
-                                name="securityPreviousWorkplace"
-                                value={formData.securityPreviousWorkplace}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                    <Form.Item
+                        label="Previous Workplace"
+                        name="securityPreviousWorkplace"
+                        rules={[{ required: true, message: 'Please enter previous workplace' }]}
+                    >
+                        <Input />
+                    </Form.Item>
 
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Experience:</label>
-                            <textarea
-                                name="securityExperience"
-                                value={formData.securityExperience}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                    <Form.Item
+                        label="Experience"
+                        name="securityExperience"
+                        rules={[{ required: true, message: 'Please enter experience' }]}
+                    >
+                        <TextArea rows={3} />
+                    </Form.Item>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Emergency Contact Name:</label>
-                            <input
-                                type="text"
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Emergency Contact Name"
                                 name="securityEmergencyContactName"
-                                value={formData.securityEmergencyContactName}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Emergency Contact Number:</label>
-                            <input
-                                type="text"
+                                rules={[{ required: true, message: 'Please enter emergency contact name' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Emergency Contact Number"
                                 name="securityEmergencyContactNumber"
-                                value={formData.securityEmergencyContactNumber}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                                rules={[{ required: true, message: 'Please enter emergency contact number' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Emergency Contact Address:</label>
-                            <textarea
-                                name="securityEmergencyContactAddress"
-                                value={formData.securityEmergencyContactAddress}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                    <Form.Item
+                        label="Emergency Contact Address"
+                        name="securityEmergencyContactAddress"
+                        rules={[{ required: true, message: 'Please enter emergency contact address' }]}
+                    >
+                        <TextArea rows={3} />
+                    </Form.Item>
 
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Additional Info:</label>
-                            <textarea
-                                name="securityAdditionalInfo"
-                                value={formData.securityAdditionalInfo}
-                                onChange={handleChange}
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
+                    <Form.Item
+                        label="Additional Info"
+                        name="securityAdditionalInfo"
+                    >
+                        <TextArea rows={3} />
+                    </Form.Item>
 
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Photo:</label>
-                            <input
-                                type="file"
-                                name="securityPhoto"
-                                onChange={handleFileChange}
-                                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border file:border-gray-300 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-semibold hover:file:bg-gray-200"
-                            />
-                        </div>
-                    </div>
+                    <Form.Item
+                        label="Photo"
+                        name="securityPhoto"
+                        // rules={ securityData.securityPhoto?[{ required: true, message: 'Please Upload Photo' }]: []}
+                        rules={ [{ required: true, message: 'Please Upload Photo' }]}
+                  
+                    >
+                        <Upload
+                            fileList={fileList}
+                            beforeUpload={() => false}
+                            onChange={handleFileChange}
+                            maxCount={1}
+                            listType="picture"
+                            
+                        >
+                            <Button icon={<UploadOutlined />}>Upload Photo</Button>
+                        </Upload>
+                    </Form.Item>
 
-                    {/* Document Uploads Section */}
-                    <fieldset className="rounded-md border p-4">
-                        <legend className="text-sm font-semibold text-gray-700">Uploads</legend>
-                        <div className="grid grid-cols-2 gap-4">
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
+                    <Card title="Uploads" size="small">
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
                                     name="securityNicUploaded"
-                                    checked={formData.securityNicUploaded}
-                                    onChange={handleChange}
-                                    className="h-4 w-4 text-blue-600 focus:ring focus:ring-blue-300"
-                                />
-                                <span>NIC Uploaded</span>
-                            </label>
-
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
+                                    valuePropName="checked"
+                                >
+                                    <Checkbox>NIC Uploaded</Checkbox>
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
                                     name="securityPoliceReportUploaded"
-                                    checked={formData.securityPoliceReportUploaded}
-                                    onChange={handleChange}
-                                    className="h-4 w-4 text-blue-600 focus:ring focus:ring-blue-300"
-                                />
-                                <span>Police Report Uploaded</span>
-                            </label>
-
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
+                                    valuePropName="checked"
+                                >
+                                    <Checkbox>Police Report Uploaded</Checkbox>
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
                                     name="securityBirthCertificateUploaded"
-                                    checked={formData.securityBirthCertificateUploaded}
-                                    onChange={handleChange}
-                                    className="h-4 w-4 text-blue-600 focus:ring focus:ring-blue-300"
-                                />
-                                <span>Birth Certificate Uploaded</span>
-                            </label>
-
-                            <label className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
+                                    valuePropName="checked"
+                                >
+                                    <Checkbox>Birth Certificate Uploaded</Checkbox>
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
                                     name="securityGramasewakaLetterUploaded"
-                                    checked={formData.securityGramasewakaLetterUploaded}
-                                    onChange={handleChange}
-                                    className="h-4 w-4 text-blue-600 focus:ring focus:ring-blue-300"
-                                />
-                                <span>Gramasewaka Letter Uploaded</span>
-                            </label>
-                        </div>
-                    </fieldset>
+                                    valuePropName="checked"
+                                >
+                                    <Checkbox>Gramasewaka Letter Uploaded</Checkbox>
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                    </Card>
 
-                    {/* Date of Join Section */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Date of Join:</label>
-                            <input
-                                type="date"
-                                name="securityDateOfJoin"
-                                value={formData.securityDateOfJoin}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                            />
-                        </div>
-                    </div>
+                    <Form.Item
+                        label="Date of Join"
+                        name="securityDateOfJoin"
+                        rules={[{ required: true, message: 'Please select date of join' }]}
+                    >
+                        <DatePicker className="w-full" format="YYYY-MM-DD" />
+                    </Form.Item>
 
-                    {/* Bank Details Section */}
-                    <fieldset className="mt-4 rounded-md border p-4">
-                        <legend className="text-sm font-semibold text-gray-700">Bank Details</legend>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Bank Name:</label>
-                                <input
-                                    type="text"
+                    <Divider orientation="left">Bank Details</Divider>
+
+                    <Form
+                        form={bankForm}
+                        layout="vertical"
+                        onValuesChange={handleBankDetailChange}
+                    >
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Bank Name"
                                     name="bank_name"
-                                    value={bankDetails.bank_name}
-                                    onChange={handleBankDetailChange}
-                                    required
-                                    className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Bank Branch:</label>
-                                <input
-                                    type="text"
+                                    rules={[{ required: true, message: 'Please enter bank name' }]}
+                                >
+                                    <Input />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Bank Branch"
                                     name="bank_branch"
-                                    value={bankDetails.bank_branch}
-                                    onChange={handleBankDetailChange}
-                                    required
-                                    className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                                />
-                            </div>
+                                    rules={[{ required: true, message: 'Please enter bank branch' }]}
+                                >
+                                    <Input />
+                                </Form.Item>
+                            </Col>
+                        </Row>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Account Number:</label>
-                                <input
-                                    type="text"
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Account Number"
                                     name="account_number"
-                                    value={bankDetails.account_number}
-                                    onChange={handleBankDetailChange}
-                                    required
-                                    className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Account Holder Name:</label>
-                                <input
-                                    type="text"
+                                    rules={[{ required: true, message: 'Please enter account number' }]}
+                                >
+                                    <Input />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Account Holder Name"
                                     name="bank_account_holder_name"
-                                    value={bankDetails.bank_account_holder_name}
-                                    onChange={handleBankDetailChange}
-                                    required
-                                    className="mt-1 w-full rounded-md border p-2 shadow-sm focus:ring focus:ring-blue-300"
-                                />
-                            </div>
+                                    rules={[{ required: true, message: 'Please enter account holder name' }]}
+                                >
+                                    <Input />
+                                </Form.Item>
+                            </Col>
+                        </Row>
 
-                            <div>
-                                <label className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        name="is_commercial_bank"
-                                        checked={bankDetails.is_commercial_bank}
-                                        onChange={handleBankDetailChange}
-                                        className="h-4 w-4 text-blue-600 focus:ring focus:ring-blue-300"
-                                    />
-                                    <span>Is Commercial Bank</span>
-                                </label>
-                            </div>
-                        </div>
-                    </fieldset>
+                        <Form.Item
+                            name="is_commercial_bank"
+                            valuePropName="checked"
+                        >
+                            <Checkbox>Is Commercial Bank</Checkbox>
+                        </Form.Item>
+                    </Form>
 
-                    {/* Action Buttons */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <button
-                            type="button"
-                            onClick={back}
-                            className="mt-4 w-full rounded-md bg-red-600 px-4 py-2 text-white shadow-md transition hover:bg-red-700"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-white shadow-md transition hover:bg-blue-700"
-                        >
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit" loading={loading}>
                             Save Changes
-                        </button>
-                    </div>
-                </form>
-            </div>
-            </>
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Card>
+        </div>
     );
 };
 

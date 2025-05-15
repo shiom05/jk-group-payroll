@@ -10,19 +10,24 @@ import {
   DeleteOutlined
 } from '@ant-design/icons';
 import EditLeave from './EditLeave';
+import useNotification from '@/hooks/useNotification';
 
 const LeaveManagement = () => {
   const [leaves, setLeaves] = useState<any[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
-
+  const [loading, setLoading] = useState(false);
   const [leaveEdit, setLeaveEdit]= useState<any>(null);
-
+ const { notifySuccess, notifyError, contextHolder } = useNotification();
+ 
   const fetchLeaves = async () => {
+    setLoading(true)
     try {
       const response = await axios.get('api/security-leaves');
       setLeaves(response.data);
     } catch (error) {
       console.error('Failed to fetch leaves:', error);
+    }finally{
+      setLoading(false)
     }
   };
 
@@ -30,10 +35,11 @@ const LeaveManagement = () => {
     try {
       console.log(id)
       await axios.delete(`api/security-leaves/${id}`);
+       notifySuccess('SUCCESS', 'Leave Deleted Successfully');
       fetchLeaves();
     } catch (error) {
       console.error('Failed to delete leave:', error);
-      message.error('Delete failed');
+      notifyError('ERROR', 'Something Went Wrong Deleting Leave, Please Try Again!');
     }
   };
 
@@ -98,6 +104,7 @@ const LeaveManagement = () => {
   return (
     <Layout>
       <div className="p-6">
+        {contextHolder}
         <h1 className="mb-4 text-3xl font-bold text-gray-800">Security Leave Management</h1>
 
         {(!showCreateForm && !leaveEdit) && (
@@ -115,6 +122,7 @@ const LeaveManagement = () => {
               dataSource={leaves}
               rowKey="id"
               bordered
+              loading={loading}
             />
           </>
         )}

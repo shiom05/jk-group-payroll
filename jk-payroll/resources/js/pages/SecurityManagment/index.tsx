@@ -1,15 +1,15 @@
 import Layout from '@/layouts/Layout';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
 import Security from '@/types/jk/security';
 import ViewSecurity from './ViewSecurity';
 import { getStatusText } from '@/utils/security';
 import EditSecurity from './EditSecurity';
-import { Table, Button, Tag, Popconfirm, Drawer, Divider, Tabs, TabsProps } from 'antd';
-import { ColumnsType } from 'antd/es/table';
+import { Table, Button, Tag, Popconfirm, Drawer, Divider, Tabs, TabsProps, Input, Space } from 'antd';
+import { ColumnsType, ColumnType } from 'antd/es/table';
 
-import { EyeOutlined, EditOutlined  } from '@ant-design/icons';
+import { EyeOutlined, EditOutlined,SearchOutlined  } from '@ant-design/icons';
 import BlackMarksList from './BlackarkManagment/BlackMarksList';
 import SecurityTerminationForm from './ResignationManagment';
 import Title from 'antd/es/typography/Title';
@@ -17,6 +17,7 @@ import { rehireSecurity } from '@/services/security-managment.service';
 import useNotification from '@/hooks/useNotification';
 import Loader from '@/components/ui/loader';
 
+import type { InputRef } from 'antd';
 
 const SecurityManagment = () => {
     const [securities, setSecurities] = useState<any>([]);
@@ -78,6 +79,80 @@ const SecurityManagment = () => {
         }
       }
 
+  const [searchText, setSearchText] = useState('');
+  const [searchedColumn, setSearchedColumn] = useState('');
+  const searchInput = useRef<InputRef>(null);
+  
+  const handleSearch = (   
+    selectedKeys: string[],
+    confirm: () => void,
+    dataIndex: keyof Security
+  ) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+    setSearchedColumn(dataIndex as string);
+  };
+
+  const handleReset = (clearFilters?: () => void, confirm?: ()=> void) => {
+    clearFilters?.();
+    confirm?.();
+    setSearchText('');
+  };
+
+  const getColumnSearchProps = (
+    dataIndex: keyof Security
+  ): ColumnType<Security> => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+      <div style={{ padding: 8 }}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
+          onPressEnter={() =>
+            handleSearch(selectedKeys as string[], confirm, dataIndex)
+          }
+          style={{ marginBottom: 8, display: 'block' }}
+        />
+        <Space> 
+          <Button
+            type="primary"
+            onClick={() =>
+              handleSearch(selectedKeys as string[], confirm, dataIndex)
+            }
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => handleReset(clearFilters, confirm)}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        ?.toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+  });
+
     const columns: ColumnsType<Security> = [
         {
             title: 'ID',
@@ -89,7 +164,8 @@ const SecurityManagment = () => {
             title: 'Name',
             dataIndex: 'securityName',
             key: 'securityName',
-            sorter: (a: any, b: any) => a.securityName.localeCompare(b.securityName),
+            // sorter: (a: any, b: any) => a.securityName.localeCompare(b.securityName),
+            ...getColumnSearchProps('securityName')
         },
         {
             title: 'NIC',
@@ -128,7 +204,7 @@ const SecurityManagment = () => {
                     <Button icon={<EditOutlined />} size="middle" onClick={() => setToEditSecuritySelected(record)} >Edit</Button>
                      <Button icon={<EyeOutlined />} size="middle" onClick={() => setToViewSecuritySelected(record)} >View</Button>                   
 
-                    <Popconfirm title="Remove this Black Mark?" onConfirm={() => {showDrawer(); setToTerminateSecuritySelected(record);}} okText="Yes" cancelText="No">
+                    <Popconfirm title="Confirm Termination of Security?" onConfirm={() => {showDrawer(); setToTerminateSecuritySelected(record);}} okText="Yes" cancelText="No">
                           <Button danger>Terminate</Button>
                       </Popconfirm>
                     
@@ -147,7 +223,8 @@ const SecurityManagment = () => {
             title: 'Name',
             dataIndex: 'securityName',
             key: 'securityName',
-            sorter: (a: any, b: any) => a.securityName.localeCompare(b.securityName),
+            // sorter: (a: any, b: any) => a.securityName.localeCompare(b.securityName),
+            ...getColumnSearchProps('securityName')
         },
         {
             title: 'NIC',
@@ -200,7 +277,8 @@ const SecurityManagment = () => {
             title: 'Name',
             dataIndex: 'securityName',
             key: 'securityName',
-            sorter: (a: any, b: any) => a.securityName.localeCompare(b.securityName),
+            // sorter: (a: any, b: any) => a.securityName.localeCompare(b.securityName),
+              ...getColumnSearchProps('securityName')
         },
         {
             title: 'NIC',
@@ -283,7 +361,8 @@ const SecurityManagment = () => {
             title: 'Name',
             dataIndex: 'securityName',
             key: 'securityName',
-            sorter: (a: any, b: any) => a.securityName.localeCompare(b.securityName),
+            // sorter: (a: any, b: any) => a.securityName.localeCompare(b.securityName),
+              ...getColumnSearchProps('securityName')
         },
         {
             title: 'NIC',
