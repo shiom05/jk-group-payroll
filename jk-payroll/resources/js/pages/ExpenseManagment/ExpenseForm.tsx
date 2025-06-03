@@ -5,6 +5,8 @@ import dayjs from 'dayjs';
 import { useForm } from '@inertiajs/react';
 import ViewExpense from './ViewExpense';
 import { createExpenseSecurity, createLoanSecurity } from '@/services/security-managment.service';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 interface ExpenseFormProps {
   securityList: any[];
@@ -24,6 +26,9 @@ export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps
   const [mode, setMode] = useState<'security' | 'general'>('security');
   const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
 
+  const [loading, setLoading] = useState(false);
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
+  
   useEffect(() => {
     setOptions(getSecuiryDropdownOptions(securityList));
   }, [securityList]);
@@ -35,46 +40,59 @@ export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps
   //   }
   // };
 
-  const handleFinish = async() => {
-    if (!data.type || !data.date || !data.amount || (mode === 'security' && !data.security_id)) {
-      message.error('Please fill all required fields');
-      return;
-    }
+  const handleFinish = async () => {
+      if (!data.type || !data.date || !data.amount || (mode === 'security' && !data.security_id)) {
+          message.error('Please fill all required fields');
+          return;
+      }
 
-    const formattedDate = typeof data.date === 'string' ? data.date : dayjs(data.date).format('YYYY-MM-DD');
+      const formattedDate = typeof data.date === 'string' ? data.date : dayjs(data.date).format('YYYY-MM-DD');
 
-    if (mode === 'general' && data.type === 'Loan') {
-      message.error('Loans can only be added to securities');
-      return;
-    }
+      if (mode === 'general' && data.type === 'Loan') {
+          message.error('Loans can only be added to securities');
+          return;
+      }
 
-    if (data.type === 'Loan') {
-      const loanPayload = {
-        security_id: data.security_id,
-        total_amount: data.amount,
-        start_date: formattedDate,
-        installments: data.installments,
-        description: data.description,
-      };
-      console.log(loanPayload)
-      const response = await createLoanSecurity(loanPayload)
-      console.log(response);
-       onCancel();
-      
-    } else {
-      const {installments, ...rest} = data;
-      const expensePayload = {
-        ...rest,
-        date: formattedDate,
-      };
-      console.log(expensePayload)
-     const result = await createExpenseSecurity(expensePayload);
-     console.log(result)
-     onCancel()
-    }
+      if (data.type === 'Loan') {
+          const loanPayload = {
+              security_id: data.security_id,
+              total_amount: data.amount,
+              start_date: formattedDate,
+              installments: data.installments,
+              description: data.description,
+          };
 
-    reset();
-    // setMode('security');
+          try {
+              setLoading(true);
+              console.log(loanPayload);
+              const response = await createLoanSecurity(loanPayload);
+              console.log(response);
+              notifySuccess('SUCCESS', 'Successfully Created Loan');
+              onCancel();
+          } catch (error) {
+              notifyError('ERROR', 'Failed to Create Loan');
+          } finally {
+              setLoading(false);
+          }
+      } else {
+          const { installments, ...rest } = data;
+          const expensePayload = {
+              ...rest,
+              date: formattedDate,
+          };
+
+          try {
+              setLoading(true);
+              const result = await createExpenseSecurity(expensePayload);
+              notifySuccess('SUCCESS', 'Successfully Created Expense');
+              onCancel();
+          } catch (error) {
+              notifyError('ERROR', 'Failed to Create Expense');
+          } finally {
+              setLoading(false);
+          }
+      }
+      reset();
   };
 
   const submitButtonDiabled = ()=>{
@@ -83,6 +101,8 @@ export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps
 
   return (
     <Form layout="vertical" onFinish={handleFinish} className="space-y-4 rounded-lg bg-white p-6! shadow-md">
+      {contextHolder}
+      {loading && <Loader/>}
       <h2 className="text-2xl font-semibold text-gray-700">Add {mode === 'security' ? 'Security' : 'General'} Expense</h2>
 
       {mode === 'security' && (

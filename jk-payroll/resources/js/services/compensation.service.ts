@@ -38,7 +38,7 @@ export const deleteCompensation = async (id: number) => {
   return response.data;
 };
 
-export const getCurrentMonthCompensations = async (security_id: string) => {
-  const response = await axios.get(`${API_URL}/current-month/${security_id}`);
+export const getCurrentMonthCompensations = async (security_id: string, date: any) => {
+  const response = await axios.get(`${API_URL}/current-month/${security_id}?date=${date}`);
   return response.data;
 };

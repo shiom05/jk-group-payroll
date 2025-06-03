@@ -47,27 +47,27 @@ const CreateLocation = ({ handleCancel }: { handleCancel: () => void }) => {
                 <h3 className="mb-2 text-lg font-medium text-gray-700">Billing Rates from Customer(LKR)</h3>
                 <Row gutter={16}>
                     <Col span={6}>
-                        <Form.Item name="billing_OIC_HourlyRate" label="OIC Hourly Rate">
+                        <Form.Item name="billing_OIC_HourlyRate" label="OIC Shift Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="billing_JSO_HourlyRate" label="JSO Hourly Rate">
+                        <Form.Item name="billing_JSO_HourlyRate" label="JSO Shift Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="billing_CSO_HourlyRate" label="CSO Hourly Rate">
+                        <Form.Item name="billing_CSO_HourlyRate" label="CSO Shift Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="billing_SSO_HourlyRate" label="SSO Hourly Rate">
+                        <Form.Item name="billing_SSO_HourlyRate" label="SSO Shift Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="billing_LSO_HourlyRate" label="LSO Hourly Rate">
+                        <Form.Item name="billing_LSO_HourlyRate" label="LSO Shift Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>
@@ -76,27 +76,27 @@ const CreateLocation = ({ handleCancel }: { handleCancel: () => void }) => {
                 <h3 className="mb-2 text-lg font-medium text-gray-700">Paying Rates to Security (LKR)</h3>
                 <Row gutter={16}>
                     <Col span={6}>
-                        <Form.Item name="paying_OIC_HourlyRate" label="OIC Hourly Rate">
+                        <Form.Item name="paying_OIC_HourlyRate" label="OIC Shift Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="paying_JSO_HourlyRate" label="JSO Hourly Rate">
+                        <Form.Item name="paying_JSO_HourlyRate" label="JSO Shift Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="paying_CSO_HourlyRate" label="CSO Hourly Rate">
+                        <Form.Item name="paying_CSO_HourlyRate" label="CSO Shift Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="paying_SSO_HourlyRate" label="SSO Hourly Rate">
+                        <Form.Item name="paying_SSO_HourlyRate" label="SSO Shift Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="paying_LSO_HourlyRate" label="LSO Hourly Rate">
+                        <Form.Item name="paying_LSO_HourlyRate" label="LSO Shift Rate">
                             <InputNumber className="w-full" min={0} />
                         </Form.Item>
                     </Col>

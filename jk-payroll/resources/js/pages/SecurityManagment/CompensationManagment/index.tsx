@@ -30,7 +30,7 @@ const CompensationSecurity = ({ security }: CompensationSecurityProps) => {
   const loadCompensations = async () => {
     try {
       const data = security 
-        ? await getCurrentMonthCompensations(security.securityId)
+        ? await getCurrentMonthCompensations(security.securityId,  dayjs(new Date()).format('YYYY-MM-DD'))
         : await getCompensations();
       setCompensations(data);
     } catch (error) {

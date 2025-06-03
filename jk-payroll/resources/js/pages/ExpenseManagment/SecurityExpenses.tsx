@@ -7,6 +7,8 @@ import ExpenseForm from './ExpenseForm';
 import ExpenseTable from './ExpenseTable';
 import ViewExpense from './ViewExpense';
 import LoansTable from './LoanTable';
+import Loader from '@/components/ui/loader';
+import useNotification from '@/hooks/useNotification';
 
 
 export default function SecurityExpenses() {
@@ -19,6 +21,11 @@ export default function SecurityExpenses() {
 
     const [loanToEdit, setLoantoEdit]= useState<any>(null);
     const [expenseToEdit, setExpensetoEdit]= useState<any>(null);
+
+    const [loading, setLoading] = useState(false);
+
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
+  
 
     useEffect(() => {
         fetchSecurities()
@@ -33,13 +40,28 @@ export default function SecurityExpenses() {
 
 
     const fetchAllSecurityExpesnes = async()=>{
-     const result = await getAllExpenses();
-     setExpenses(result.data)
-    }
+       setLoading(true)
+       try {
+         const result = await getAllExpenses();
+         setExpenses(result.data)
+       } catch (error) {
+         notifyError('ERROR', 'Failed to Expenses');
+       }finally{
+         setLoading(false)
+       }
+     }
+
     const fetchAllSecurityLoans= async()=>{
-     const result = await getAllLoans();
-     setLoans(result.data);
-     console.log(result.data)
+     setLoading(true)
+       try {
+        const result = await getAllLoans();
+        setLoans(result.data);
+       } catch (error) {
+         notifyError('ERROR', 'Failed to Loans');
+       }finally{
+         setLoading(false)
+       }
+     
     }
 
 
@@ -51,16 +73,31 @@ export default function SecurityExpenses() {
     };
 
     const handleDeleteExpense = async(expenseId: any) => {
-        console.log('...deleting', expenseId)
-        const resut = await deleteExpenseSecurity(expenseId);
+        setLoading(true)
+       try {
+         const resut = await deleteExpenseSecurity(expenseId);
         console.log(resut.data);
         fetchAllSecurityExpesnes();
+        notifySuccess('SUCCESS', 'Successfully Deleted Expense');
+       } catch (error) {
+         notifyError('ERROR', 'Failed to Delete Expense');
+       }finally{
+         setLoading(false)
+       }
     };
 
     const handleDeleteLoan = async(loanId: any) => {
+        setLoading(true)
+       try {
         const resut = await deleteLoanSecurity(loanId);
         console.log(resut);
         fetchAllSecurityLoans();
+        notifySuccess('SUCCESS', 'Successfully Deleted Loan');
+       } catch (error) {
+         notifyError('ERROR', 'Failed to Delete Loan');
+       }finally{
+         setLoading(false)
+       }
     };
 
     useEffect(()=>{
@@ -80,6 +117,8 @@ export default function SecurityExpenses() {
     return (
         <>
             <div className="mx-auto max-w-6xl pt-10 pb-20">
+                         {contextHolder}
+      {loading && <Loader/>}
                 <Button
                     className="mb-10!"
                     onClick={() => setIsCreateNewExpense(true)}

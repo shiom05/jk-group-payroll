@@ -19,6 +19,10 @@ class BankDetail extends Model
         'is_commercial_bank',
     ];
 
+    protected $casts = [
+    'is_commercial_bank' => 'boolean',
+    ];
+
     public function security()
     {
         // return $this->belongsTo(Security::class);

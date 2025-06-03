@@ -7,6 +7,7 @@ use App\Models\Locations;
 
 use App\Http\Requests\StoreSecurityShiftLogRequest;
 use App\Http\Requests\UpdateSecurityShiftLogRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class SecurityShiftLogController extends Controller
@@ -54,11 +55,13 @@ class SecurityShiftLogController extends Controller
         return response()->json($shifts);
     }
 
-    public function getCurrentMonthShiftsForSecurity($securityId)
+    public function getCurrentMonthShiftsForSecurity(Request $request, $securityId)
     {
-        $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
-        // $today = Carbon::now()->toDateString();
-        $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
+
+        $dateInput = $request->query('date');
+        $now =  $dateInput ? Carbon::parse($dateInput) : Carbon::now();
+        $startOfMonth =  $now->copy()->startOfMonth();
+        $endOfMonth =  $now->copy()->endOfMonth();
 
         $shifts = SecurityShiftLog::where('security_id', $securityId)
             // ->whereBetween('shift_date', [$startOfMonth, $today])
@@ -91,10 +94,10 @@ class SecurityShiftLogController extends Controller
 
         $type = $security->securityType; // JSO, CSO, etc.
         $payRateField = 'paying_' . strtoupper($type) . '_HourlyRate';
-        $hourlyRate = $location->$payRateField ?? 0;
+        $hourlyRate = $location->$payRateField/12 ?? 0;
 
         $billRateField = 'billing_' . strtoupper($type) . '_HourlyRate';
-        $hourlyBillRate = $location->$billRateField ?? 0;
+        $hourlyBillRate = $location->$billRateField/12 ?? 0; //vaidate becuase im dividing shiftware by 12 assuming shifts are 12 hours always to mutiply by hours to accomadate less shifts
 
         $validated['total_hours'] = round($totalHours, 2);
         $validated['security_total_pay_for_shift'] = round($totalHours * $hourlyRate, 2);

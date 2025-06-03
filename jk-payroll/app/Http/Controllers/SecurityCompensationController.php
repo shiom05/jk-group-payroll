@@ -25,9 +25,11 @@ class SecurityCompensationController extends Controller
         return response()->json($query->get());
     }
 
-    public function getCurrentMonthCompensations($security_id)
+    public function getCurrentMonthCompensations(Request $request, $security_id)
     {
-        $now = Carbon::now();
+        // $now = Carbon::now();
+        $dateInput = $request->query('date');
+        $now =  $dateInput ? Carbon::parse($dateInput) : Carbon::now();
         $startOfMonth = $now->copy()->startOfMonth()->toDateTimeString();
         $endOfMonth = $now->copy()->endOfMonth()->toDateTimeString();
 

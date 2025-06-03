@@ -6,6 +6,7 @@ use App\Models\Security;
 use App\Models\SecurityBlackMark;
 use App\Http\Requests\StoreSecurityBlackMarkRequest;
 use App\Http\Requests\UpdateSecurityBlackMarkRequest;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
@@ -83,9 +84,10 @@ class SecurityBlackMarkController extends Controller
     /**
      * Get COMPLETED black marks for specific security (deductible)
      */
-    public function deductibleCurrentMonthBlackMarksForSecurity($security_id)
+    public function deductibleCurrentMonthBlackMarksForSecurity(Request $request, $security_id)
     {
-        $now = Carbon::now();
+        $dateInput = $request->query('date');
+        $now =  $dateInput ? Carbon::parse($dateInput) : Carbon::now();
         $startOfMonth = $now->copy()->startOfMonth()->toDateTimeString();
         $endOfMonth = $now->copy()->endOfMonth()->toDateTimeString();
 

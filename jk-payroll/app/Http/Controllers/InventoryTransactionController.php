@@ -98,9 +98,11 @@ class InventoryTransactionController extends Controller
         //     ]);
         // }
 
-        public function allocatedInventoriesForSecurityCurrentMonth($securityId)
+        public function allocatedInventoriesForSecurityCurrentMonth(Request $request, $securityId)
 {
-    $now = Carbon::now();
+    // $now = Carbon::now();
+    $dateInput = $request->query('date');
+    $now =  $dateInput ? Carbon::parse($dateInput) : Carbon::now();
     $startOfMonth = $now->copy()->startOfMonth()->toDateString();
     $endOfMonth = $now->copy()->endOfMonth()->toDateString();
 

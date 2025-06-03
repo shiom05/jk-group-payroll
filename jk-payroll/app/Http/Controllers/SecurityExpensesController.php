@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SecurityExpenses;
 use App\Http\Requests\StoreSecurityExpensesRequest;
 use App\Http\Requests\UpdateSecurityExpensesRequest;
+use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 
@@ -30,9 +31,11 @@ class SecurityExpensesController extends Controller
     /**
      * fetched current month expeses
      */
-    public function getCurrentMonthExpenseBySecurity($securityId)
+    public function getCurrentMonthExpenseBySecurity(Request $request, $securityId)
     {
-        $now = Carbon::now();
+        // $now = Carbon::now();
+        $dateInput = $request->query('date');
+        $now =  $dateInput ? Carbon::parse($dateInput) : Carbon::now();
         $expenses = SecurityExpenses::where('security_id', $securityId)
             ->whereMonth('date', $now->month)
             ->whereYear('date', $now->year)

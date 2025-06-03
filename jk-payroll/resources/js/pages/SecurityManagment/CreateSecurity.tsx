@@ -33,6 +33,7 @@ const CreateSecurity = () => {
 
   const [formData, setFormData] = useState<any>({
     securityName: '',
+    securityId:'',
     securityDob: '',
     securityNicNumber: '',
     securityCurrentAddress: '',
@@ -184,6 +185,15 @@ const CreateSecurity = () => {
           >
             <Row gutter={16}>
               <Col span={12}>
+                <Form.Item
+                  label="SecurityId"
+                  name="SecurityId"
+                  rules={[{ required: true, message: 'Please enter security Id' }]}
+                >
+                  <Input />
+                </Form.Item>
+              </Col>
+               <Col span={12}>
                 <Form.Item
                   label="Name"
                   name="securityName"

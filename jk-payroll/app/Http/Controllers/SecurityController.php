@@ -51,6 +51,7 @@ class SecurityController extends Controller
 
 
         $validator = Validator::make($request->all(), [
+            'securityId' => ['required'],
             'securityName' => ['required'],
             'securityDob' => ['required'],
             'securityNicNumber' => ['required'],
@@ -86,11 +87,11 @@ class SecurityController extends Controller
         }
 
         $data = $request->except('securityPhoto');
-        $datePart = now()->format('Ymd');
-        $randomNumber = mt_rand(1, 9999);
-        $randomPart = str_pad($randomNumber, 4, '0', STR_PAD_LEFT);
-        $securityId = 'JK' . $datePart . $randomPart;
-        $data['securityId'] = $securityId;
+        // $datePart = now()->format('Ymd');
+        // $randomNumber = mt_rand(1, 9999);
+        // $randomPart = str_pad($randomNumber, 4, '0', STR_PAD_LEFT);
+        // $securityId = 'JK' . $datePart . $randomPart;
+        // $data['securityId'] = $securityId;
 
         if (isset($data['securityStatus'])) {
             $data['securityStatus'] = (int) $data['securityStatus'];
@@ -144,6 +145,7 @@ class SecurityController extends Controller
         }
 
         $validatedData = $request->validate([
+            'securityId' => ['required'],
             'securityName' => ['required'],
             'securityDob' => ['required'],
             'securityNicNumber' => ['required'],

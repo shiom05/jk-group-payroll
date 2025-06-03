@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SecurityLoans;
 use App\Http\Requests\StoreSecurityLoansRequest;
 use App\Http\Requests\UpdateSecurityLoansRequest;
+use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -38,9 +39,11 @@ class SecurityLoansController extends Controller
         return response()->json($loans);
     }
     
-    public function getLoansForPayroll($securityId)
+    public function getLoansForPayroll(Request $request, $securityId)
     {
-        $today = Carbon::now();
+        // $today = Carbon::now();
+        $dateInput = $request->query('date');
+        $today =  $dateInput ? Carbon::parse($dateInput) : Carbon::now();
         $currentMonthEnd = $today->copy()->endOfMonth();
         $currentMonthStart = $today->copy()->startOfMonth();
 
@@ -51,7 +54,7 @@ class SecurityLoansController extends Controller
                         $q->where(function($sub) use ($currentMonthStart) {
                             // SQLite compatible date calculation
                             $sub->whereRaw(
-                                "date(start_date, '+' || installments || ' months') >= ?",
+                                "date(start_date, '+' || (installments - 1) || ' months') >= ?",
                                 [$currentMonthStart->format('Y-m-d')]
                             );
                         })

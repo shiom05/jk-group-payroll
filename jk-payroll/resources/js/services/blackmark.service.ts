@@ -57,11 +57,16 @@ export const fetchPendingBlackMarks = async (securityId?: string) => {
   return response.data;
 };
 
-//completed black marks
-export const fetchDeductibleBlackMarks = async (securityId?: string) => {
-  const url = securityId 
+// completed black marks
+export const fetchDeductibleBlackMarks = async (securityId?: string, date?: string) => {
+  let url = securityId 
     ? `${API_URL}/current-month/deductible/${securityId}`
     : `${API_URL}/current-month/deductible`;
+
+  if (date) {
+    url += `?date=${(date)}`;
+  }
+
   const response = await axios.get(url);
   return response.data;
 };

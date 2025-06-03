@@ -3,11 +3,13 @@ import { getCurrentMonthShiftsForSecurity } from '@/services/logshift.service';
 import { getAllocatedInventoriesForSecuriyCurrentMonth, getAllSecurities, getSecurityCurrentMonthExpenses, getSecurityCurrentMonthPayrollLoans } from '@/services/security-managment.service';
 import Security from '@/types/jk/security';
 import { PayCircleOutlined } from '@ant-design/icons';
-import { Button, Drawer, Image, Typography } from 'antd';
+import { Button, DatePicker, Drawer, Form, Image, Typography } from 'antd';
 import Table, { ColumnsType } from 'antd/es/table';
 import { useEffect, useState } from 'react';
 import PayslipComponent from './PaySlip';
 import { fetchDeductibleBlackMarks, SecurityBlackMark } from '@/services/blackmark.service';
+import dayjs from 'dayjs';
+import { getCurrentMonthCompensations, SecurityCompensation } from '@/services/compensation.service';
 
 const { Title } = Typography;
 
@@ -22,6 +24,11 @@ const PayrolManagment = () => {
     const [inventoryData, setInventoryData]= useState<number>(0);
     const [loanData, setLoanData]= useState<any>([]);
     const [finesData, setFinesData] = useState<SecurityBlackMark[]>([]);
+    const [compensationData, setCompensationData] = useState<SecurityCompensation[]>([]);
+
+    const [form] = Form.useForm();
+    const [selectedDate, setSelectedDate] = useState<any>(null); // State variable for selected date
+
 
     const columns: ColumnsType<Security> = [
         {
@@ -77,36 +84,44 @@ const PayrolManagment = () => {
 
     const getCurrentMonthShift = async (security:Security) => {
         setLoading(true);
-        const result = await getCurrentMonthShiftsForSecurity(security.securityId);
+        const result = await getCurrentMonthShiftsForSecurity(security.securityId, selectedDate);
         setShiftData(result.data);
         setLoading(false);
     };
     const getCurrentMonthExpenses = async (security:Security) => {
         
         setLoading(true);
-        const result = await getSecurityCurrentMonthExpenses(security.securityId);
+        const result = await getSecurityCurrentMonthExpenses(security.securityId, selectedDate);
         setExpenseData(result.data); 
         setLoading(false);
     };
     const getCurrentMonthInventory = async (security:Security) => {
         setLoading(true);
-        const result = await getAllocatedInventoriesForSecuriyCurrentMonth(security.securityId);
+        const result = await getAllocatedInventoriesForSecuriyCurrentMonth(security.securityId, selectedDate);
         setInventoryData(result.data.total_allocated_value);    
         setLoading(false); 
     };
     const getCurrentMonthLoan = async (security:Security) => {
         setLoading(true);
-        const result = await getSecurityCurrentMonthPayrollLoans(security.securityId);
+        const result = await getSecurityCurrentMonthPayrollLoans(security.securityId, selectedDate);
         setLoanData(result.data);    
         setLoading(false); 
     };
 
     const getCurrentMonthFines = async (security:Security) => {
         setLoading(true);
-        const result = await fetchDeductibleBlackMarks(security.securityId);
+        const result = await fetchDeductibleBlackMarks(security.securityId, selectedDate);
         setFinesData(result);    
         setLoading(false); 
     };
+
+       const getCurrentMonthCompenstions = async (security:Security) => {
+        setLoading(true);
+        const result = await getCurrentMonthCompensations(security.securityId, selectedDate);
+        setCompensationData(result);    
+        setLoading(false); 
+    };
+
 
     useEffect(() => {
         fetchSecurites();
@@ -120,6 +135,7 @@ const PayrolManagment = () => {
         getCurrentMonthInventory(Security);
         getCurrentMonthLoan(Security);
         getCurrentMonthFines(Security);
+        getCurrentMonthCompenstions(Security);
         
 
         setTimeout(() => {
@@ -129,6 +145,14 @@ const PayrolManagment = () => {
     const formatDate = (date: any) => {
         return new Intl.DateTimeFormat('en-GB').format(date); // dd/mm/yyyy
     };
+
+    const onFinish = (values: any) => {
+    const formattedDate = values.date ? dayjs(values.date).format('YYYY-MM-DD') : null;
+    console.log('Selected Date:', formattedDate);
+    setSelectedDate(formattedDate);
+  };
+
+
     return (
         <Layout>
             <div className="p-10 pt-10">
@@ -137,6 +161,26 @@ const PayrolManagment = () => {
                     <PayCircleOutlined /> PAYROLL MANAGMENT
                 </Title>
 
+                  <Form form={form} onFinish={onFinish} layout="vertical">
+      <Form.Item
+        label="Select a Date"
+        name="date"
+        rules={[{ required: true, message: 'Please select a date' }]}
+      >
+        <DatePicker className="w-full" />
+      </Form.Item>
+
+      <Form.Item>
+        <Button type="primary" htmlType="submit">
+          Submit Date
+        </Button>
+      </Form.Item>
+ </Form>
+      {selectedDate && (
+        <>
+        <div>
+          <strong>Selected Date for API:</strong> {selectedDate}
+        </div>
                 <Table
                     columns={columns}
                     dataSource={securities}
@@ -146,6 +190,10 @@ const PayrolManagment = () => {
                     scroll={{ x: true }}
                     locale={{ emptyText: 'No Securities .....' }}
                 />
+</>
+      )}
+   
+
 
                 <Drawer
                     closable
@@ -157,7 +205,7 @@ const PayrolManagment = () => {
                     size="large"
                     width={1000}
                 >
-                    <p><PayslipComponent totalShifts={shiftData} expenses={expenseData} security={selectedSecurity? selectedSecurity: null} inventoryExpenses={inventoryData} loanInstallment={loanData} finesData={finesData} /></p>
+                    <p><PayslipComponent totalShifts={shiftData} expenses={expenseData} security={selectedSecurity? selectedSecurity: null} inventoryExpenses={inventoryData} loanInstallment={loanData} finesData={finesData} compensationData={compensationData} /></p>
                 </Drawer>
             </div>
         </Layout>

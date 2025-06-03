@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Form, Select, Input, DatePicker, Button, message } from 'antd';
 import dayjs from 'dayjs';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 const { TextArea } = Input;
 
@@ -16,13 +18,21 @@ const CreateLeave = ({ onClose }: { onClose: () => void }) => {
   const [leaveType, setLeaveType] = useState('Annual');
   const [form] = Form.useForm();
 
+  const [loading, setLoading] = useState(false);
+
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
+
   useEffect(() => {
-    const fetchSecurities = async () => {
-      try {
+    const fetchSecurities = async () => { 
+      try { 
+        setLoading(true)
         const response = await axios.get('/api/securities');
         setSecurities(response.data);
       } catch (error) {
         console.error('Error fetching securities:', error);
+        notifyError('ERROR', 'Failed to fetch employees');
+      }finally{
+        setLoading(false)
       }
     };
     fetchSecurities();
@@ -39,17 +49,22 @@ const CreateLeave = ({ onClose }: { onClose: () => void }) => {
     };
 
     try {
+      setLoading(true)
       await axios.post('api/security-leaves', leaveBody);
-      message.success('Leave created successfully');
+      notifySuccess('SUCCESS', 'Leave created successfully');
       onClose();
     } catch (error) {
       console.error('Failed to create leave:', error);
-      message.error('Failed to create leave');
+       notifyError('ERROR', 'Failed to create leave');
+    }finally{
+       setLoading(false)
     }
   };
 
   return (
     <div className="mb-6 rounded-lg bg-white p-6 shadow-md">
+      {contextHolder}
+      {loading && <Loader/>}
       <h2 className="mb-4 text-xl font-bold text-gray-700">Create Leave</h2>
 
       <Form
