@@ -1,9 +1,10 @@
 import { SecurityBlackMark } from '@/services/blackmark.service';
 import { SecurityCompensation } from '@/services/compensation.service';
+import { savePayroll } from '@/services/payroll.service';
 import Security from '@/types/jk/security';
-import { Card, Table, Typography } from 'antd';
-import { useMemo } from 'react';
-
+import { Card, Table, Typography, Input, InputNumber, Checkbox, Button } from 'antd';
+import { useMemo, useState } from 'react';
+import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 
 interface PayslipPorps {
@@ -13,169 +14,352 @@ interface PayslipPorps {
     security: Security | null;
     loanInstallment: any,
     finesData: SecurityBlackMark[],
-    compensationData: SecurityCompensation[]
+    compensationData: SecurityCompensation[],
+    monthYear: string;
+    existingPayroll: any;
 }
 
-const PayslipComponent = ({ totalShifts, expenses, inventoryExpenses, security, loanInstallment, finesData,   compensationData }: PayslipPorps) => {
+const PayslipComponent = ({ totalShifts, expenses, inventoryExpenses, security, loanInstallment, finesData, compensationData, monthYear, existingPayroll }: PayslipPorps) => {
+    const [basicSalary, setBasicSalary] = useState<number>(existingPayroll? existingPayroll.parameters.basic :17500);
+    const [br1Allowance, setBr1Allowance] = useState<number>(existingPayroll? existingPayroll.parameters.br1 : 1000);
+    const [br2Allowance, setBr2Allowance] = useState<number>(existingPayroll? existingPayroll.parameters.br2 :2500);
+    const [includeWelfare, setIncludeWelfare] = useState<boolean>(existingPayroll? (existingPayroll.parameters.deductions.welfare === 200 ? true : false) : true);
 
-console.log({expenses, inventoryExpenses, security, loanInstallment, finesData, compensationData })
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
+    
+    const formatNumber = (num: number) => {
+        return num.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    };
 
-const formatNumber = (num: number) => {
-  return num.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-};
+    const totalShiftPay = existingPayroll? existingPayroll.parameters.gross :  useMemo(() => {
+        return totalShifts.reduce((totalPay: number, shift: any) => {
+            return totalPay + shift.security_total_pay_for_shift;
+        }, 0);
+    }, [totalShifts]); 
 
-const totalShiftPay = useMemo(() => {
-  return totalShifts.reduce((totalPay: number, shift: any) => {
-    return totalPay + shift.security_total_pay_for_shift;
-  }, 0);
-}, [totalShifts]); 
+    const totalAccomdation = existingPayroll? existingPayroll.parameters.deductions.accommodation : useMemo(() => {
+        return expenses.reduce((total: number, expense: any) => {
+            if(expense.type === "Accommodation"){
+                total+= expense.amount;
+            }
+            return total;
+        }, 0);
+    }, [expenses]); 
 
-const totalAccomdation = useMemo(() => {
-  return expenses.reduce((total: number, expense: any) => {
-    if(expense.type === "Accommodation"){
-      total+= expense.amount;
-    }
-    return total;
-  }, 0);
-}, [expenses]); 
+    const totalTravel = existingPayroll? existingPayroll.parameters.deductions.transport : useMemo(() => {
+        return expenses.reduce((total: number, expense: any) => {
+            if(expense.type === "Travel"){
+                total+= expense.amount;
+            }
+            return total;
+        }, 0);
+    }, [expenses]); 
 
-const totalTravel = useMemo(() => {
-  return expenses.reduce((total: number, expense: any) => {
-    if(expense.type === "Travel"){
-      total+= expense.amount;
-    }
-    return total;
-  }, 0);
-}, [expenses]); 
+    const totalFood =existingPayroll? existingPayroll.parameters.deductions.food : useMemo(() => {
+        return expenses.reduce((total: number, expense: any) => {
+            if(expense.type === "Food"){
+                total+= expense.amount;
+            }
+            return total;
+        }, 0);
+    }, [expenses]); 
 
-const totalFood = useMemo(() => {
-  return expenses.reduce((total: number, expense: any) => {
-    if(expense.type === "Food"){
-      total+= expense.amount;
-    }
-    return total;
-  }, 0);
-}, [expenses]); 
+    const totalSalaryAdvances = existingPayroll? existingPayroll.parameters.deductions.salaryAdvances : useMemo(() => {
+        return expenses.reduce((total: number, expense: any) => {
+            if(expense.type === "SalaryAdvance"){
+                total+= expense.amount;
+            }
+            return total;
+        }, 0);
+    }, [expenses]); 
 
-const totalSalaryAdvances = useMemo(() => {
-  return expenses.reduce((total: number, expense: any) => {
-    if(expense.type === "SalaryAdvance"){
-      total+= expense.amount;
-    }
-    return total;
-  }, 0);
-}, [expenses]); 
+    const totalFines =existingPayroll? existingPayroll.parameters.deductions.fines : useMemo(() => {
+        return finesData.reduce((totalFineAmount: number, fine: SecurityBlackMark) => {
+            if(fine.fine_amount){
+                totalFineAmount += fine.fine_amount;
+            }
+            return totalFineAmount;
+        }, 0);
+    }, [finesData]); 
 
-// const totalInventoryExpense = useMemo(() => {
-//   return inventoryExpenses.reduce((total: number, inventory: any) => {
-//    total += inventory.items.reduce((transactionTotal: any, item: any)=> {
-//       transactionTotal+= parseInt(item.unit_price);
-//       return transactionTotal;
-//     }, 0)
-//     return total;
-//   }, 0);
-// }, [inventoryExpenses]); 
+    const totalCompensation =existingPayroll? existingPayroll.parameters.compensation : useMemo(() => {
+        return compensationData.reduce((totalAmount: number, compensation: SecurityCompensation) => {
+            if(compensation.amount){
+                totalAmount += parseInt(compensation.amount.toString());
+            }
+            return totalAmount; 
+        }, 0);
+    }, [compensationData]); 
 
-const totalFines = useMemo(() => {
-  return finesData.reduce((totalFineAmount: number, fine: SecurityBlackMark) => {
-    if(fine.fine_amount){
-       totalFineAmount += fine.fine_amount;
-    }
-    return totalFineAmount;
-  }, 0);
-}, [finesData]); 
+    const totalInventoryExpense =existingPayroll? existingPayroll.parameters.deductions.uniform : inventoryExpenses;
 
-const totalCompensation = useMemo(() => {
-  return compensationData.reduce((totalAmount: number, compensation: SecurityCompensation) => {
-    if(compensation.amount){
-       totalAmount += parseInt(compensation.amount.toString());
-    }
-    return totalAmount; 
-  }, 0);
-}, [compensationData]); 
+    const totalLoan =existingPayroll? existingPayroll.parameters.deductions.loan : useMemo(() => {
+        return loanInstallment.reduce((total: number, loan: any) => {
+            total+= loan.installment_amount;
+            return total;
+        }, 0);
+    }, [loanInstallment]); 
 
-const totalInventoryExpense = inventoryExpenses;
+    const bankCharge = existingPayroll? existingPayroll.parameters.deductions.bankCharges : (security?.bank_details.is_commercial_bank === "true" || security?.bank_details.is_commercial_bank === true)? 0: 100;
 
-const totalLoan = useMemo(() => {
-  return loanInstallment.reduce((total: number, loan: any) => {
-    total+= loan.installment_amount;
-    return total;
-  }, 0);
-}, [loanInstallment]); 
-
-const bankCharge = (security?.bank_details.is_commercial_bank === "true" || security?.bank_details.is_commercial_bank === true)? 0: 100;
-
-
-console.log({totalShiftPay, totalAccomdation, totalFood, totalTravel, totalLoan, inventoryExpenses,totalSalaryAdvances, totalInventoryExpense, totalFines, totalCompensation })
+    const basicEpf = existingPayroll? existingPayroll.parameters.basicEpf :(basicSalary + br1Allowance + br2Allowance);
+    const overtimePay = existingPayroll? existingPayroll.parameters.ot : (totalShiftPay - basicEpf);
 
     // Sample payslip data
     const payslipData = [
-        { key: 'basic', label: 'Basic Salary', amount: '17,500.00' },
-        { key: 'br1', label: 'BR 1 Allowance', amount: '1,000.00' },
-        { key: 'br2', label: 'BR 2 Allowance', amount: '2,500.00' }, //what if they dont have a total shift> 21000??? 
-        { key: 'basicEpf', label: 'BASIC SALARY FOR EPF', amount: '21, 000.00', isBold: true },
-        { key: 'ot', label: 'OT', amount: formatNumber(totalShiftPay - 21000) },
+        {
+            key: 'basic',
+            label: 'Basic Salary',
+            amount: formatNumber(basicSalary),
+            editable: true,
+            component: (
+                <div>
+                    {/* <Text style={{ flex: 1, fontWeight: 500 }}>BASIC SALARY</Text> */}
+                    <InputNumber
+                        value={basicSalary}
+                        onChange={(value) => setBasicSalary(value || 0)}
+                        min={0}
+                        step={100}
+                        style={{ width: 120 }}
+                        size="small"
+                    />
+                </div>
+            ),
+        },
+        {
+            key: 'br1',
+            label: 'BR 1 Allowance',
+            amount: formatNumber(br1Allowance),
+            editable: true,
+            component: (
+                <div>
+                    {/* <Text style={{ flex: 1, fontWeight: 500 }}>BR 1 ALLOWANCE</Text> */}
+                    <InputNumber
+                        value={br1Allowance}
+                        onChange={(value) => setBr1Allowance(value || 0)}
+                        min={0}
+                        step={100}
+                        style={{ width: 120 }}
+                        size="small"
+                    />
+                </div>
+            ),
+        },
+        {
+            key: 'br2',
+            label: 'BR 2 Allowance',
+            amount: formatNumber(br2Allowance),
+            editable: true,
+            component: (
+                <div>
+                    {/* <Text style={{ flex: 1, fontWeight: 500 }}>BR 2 ALLOWANCE</Text> */}
+                    <InputNumber
+                        value={br2Allowance}
+                        onChange={(value) => setBr2Allowance(value || 0)}
+                        min={0}
+                        step={100}
+                        style={{ width: 120 }}
+                        size="small"
+                    />
+                </div>
+            ),
+        },
+        {
+            key: 'basicEpf',
+            label: 'BASIC SALARY FOR EPF',
+            amount: formatNumber(basicEpf),
+            isBold: true,
+        },
+        {
+            key: 'ot',
+            label: 'OT',
+            amount: overtimePay > 0 ? formatNumber(overtimePay) : '0.00',
+        },
 
         { key: 'space-1', label: '', amount: '' },
 
-        { key: 'gross', label: 'GROSS SALARY', amount: formatNumber(totalShiftPay) },
+        {
+            key: 'gross',
+            label: 'GROSS SALARY',
+            amount: formatNumber(totalShiftPay),
+        },
         { key: 'space-2', label: '', amount: '' },
-        { key: 'compensation', label: 'Compensation', amount: totalCompensation? formatNumber(totalCompensation) : '-'},
+        {
+            key: 'compensation',
+            label: 'Compensation',
+            amount: totalCompensation ? formatNumber(totalCompensation) : '-',
+        },
 
-        { key: 'deductions', label: 'DEDUTIONS:', amount: '', isBold: true},
+        { key: 'deductions', label: 'DEDUTIONS:', amount: '', isBold: true },
 
-        { key: 'salaryadavances', label: 'Salary Advances', amount: totalSalaryAdvances >0?formatNumber(totalSalaryAdvances): '-', isDeduction: true },
-        { key: 'food', label: 'Food', amount: totalFood >0?formatNumber(totalFood): '-', isDeduction: true },
-        { key: 'transport', label: 'Transport', amount: totalTravel >0?formatNumber(totalTravel): '-', isDeduction: true },
-        { key: 'accomadation', label: 'accomadation', amount: totalAccomdation >0?formatNumber(totalAccomdation): '-', isDeduction: true },
-        { key: 'uniform', label: 'Uniform', amount: totalInventoryExpense >0?formatNumber(totalInventoryExpense): '-', isDeduction: true },
-
-        { key: 'fines', label: 'fines', amount: totalFines? formatNumber(totalFines) : '-', isDeduction: true },
-
-        { key: 'bankchanrges', label: 'bank charges', amount: bankCharge>0?formatNumber(bankCharge): '-', isDeduction: true },
-        // { key: 'welfare', label: 'welfare', amount: '5,000.00', isDeduction: true }, //ask whayt this is?
-        // { key: 'epf', label: 'epf', amount: '1,200.00', isDeduction: true }, //clarify
-
-        { key: 'otherLoanInstl', label: 'other: Loan Instl', amount: totalLoan >0?formatNumber(totalLoan): '-', isDeduction: true },
-        
-        // { key: 'space-3', label: '', amount: '' },
-        // { key: 'totalDeduction', label: 'Total deductions', amount: '500.00', isDeduction: true },
-        
-        // { key: 'space-4', label: '', amount: '' }, 
-        // { key: 'netsalary', label: 'net salary', amount: '500.00', isBold: true },
-
+        {
+            key: 'salaryadavances',
+            label: 'Salary Advances',
+            amount: totalSalaryAdvances > 0 ? formatNumber(totalSalaryAdvances) : '-',
+            isDeduction: true,
+        },
+        {
+            key: 'food',
+            label: 'Food',
+            amount: totalFood > 0 ? formatNumber(totalFood) : '-',
+            isDeduction: true,
+        },
+        {
+            key: 'transport',
+            label: 'Transport',
+            amount: totalTravel > 0 ? formatNumber(totalTravel) : '-',
+            isDeduction: true,
+        },
+        {
+            key: 'accomadation',
+            label: 'accomadation',
+            amount: totalAccomdation > 0 ? formatNumber(totalAccomdation) : '-',
+            isDeduction: true,
+        },
+        {
+            key: 'uniform',
+            label: 'Uniform',
+            amount: totalInventoryExpense > 0 ? formatNumber(totalInventoryExpense) : '-',
+            isDeduction: true,
+        },
+        {
+            key: 'fines',
+            label: 'fines',
+            amount: totalFines ? formatNumber(totalFines) : '-',
+            isDeduction: true,
+        },
+        {
+            key: 'bankchanrges',
+            label: 'bank charges',
+            amount: bankCharge > 0 ? formatNumber(bankCharge) : '-',
+            isDeduction: true,
+        },
+        {
+            key: 'welfare',
+            label: 'welfare',
+            amount: includeWelfare ? '200.00' : '0.00',
+            isDeduction: true,
+            isWelfare: true,
+            component: (
+                <div style={{display: 'flex', justifyContent: 'space-between'}}><Text className={`font-medium`}>{'welfare'.toLocaleUpperCase()}</Text> 
+                <Checkbox checked={includeWelfare} onChange={(e) => setIncludeWelfare(e.target.checked)}>
+                   Include Welfare (200)
+                </Checkbox>
+                </div>  
+            ),
+        },
+        {
+            key: 'otherLoanInstl',
+            label: 'other: Loan Instl',
+            amount: totalLoan > 0 ? formatNumber(totalLoan) : '-',
+            isDeduction: true,
+        },
     ];
 
-    // Calculate totals
-    const earnings = totalShiftPay+ totalCompensation;
-    const deductions = totalAccomdation+totalFood+totalSalaryAdvances+ totalTravel + totalLoan+ inventoryExpenses+ bankCharge;
+    // Calculate totals including welfare
+    const welfareDeduction = (includeWelfare ? 200 : 0);
+    const earnings = totalShiftPay + totalCompensation;
+    const deductions = totalAccomdation + totalFood + totalSalaryAdvances + totalTravel + totalLoan + totalInventoryExpense + bankCharge + welfareDeduction + totalFines;
     const netSalary = earnings - deductions;
+
+    console.log({totalShiftPay, totalAccomdation, totalFood, totalTravel, totalLoan,totalSalaryAdvances, totalInventoryExpense, totalFines, totalCompensation })
+
 
     const columns: any = [
         {
             dataIndex: 'label',
             key: 'label',
-            render: (text: string, record: any) => <Text  className={`${record.isBold ? 'font-extrabold': 'font-medium'}`}>{text.toLocaleUpperCase()}</Text>,
+            render: (text: string, record: any) => {
+
+                if (record.isWelfare) {
+                    return record.component;
+                }
+                return <Text className={`${record.isBold ? 'font-extrabold': 'font-medium'}`}>{text.toLocaleUpperCase()}</Text>;
+            },
         },
         {
             dataIndex: 'amount',
             key: 'amount',
             align: 'right',
-            render: (text: string, record: any) => (
-                <Text type={record.isDeduction ? 'danger' : 'success'}>
-                    {record.isDeduction ? '-' : ''}
-                    {text}
-                </Text>
-            ),
+            render: (text: string, record: any) => {
+                if (record.editable) {
+                    return record.component; 
+                }
+                return (
+                    <Text type={record.isDeduction ? 'danger' : 'success'}>
+                        {record.isDeduction ? '-' : ''}
+                        {text}
+                    </Text>
+                );
+            },
         },
     ];
 
+
+
+    const handleSavePayroll = async () => {
+    setIsSaving(true);
+    setSaveSuccess(false);
+    
+    try {
+        const payrollData = {
+            payroll_month: monthYear, // You should make this dynamic
+            security_id: security?.securityId,
+            parameters: {
+                basic: basicSalary,
+                br1: br1Allowance,
+                br2: br2Allowance,
+                basicEpf: basicEpf,
+                ot: overtimePay,
+                gross: totalShiftPay,
+                compensation: totalCompensation,
+                deductions: {
+                    salaryAdvances: totalSalaryAdvances,
+                    food: totalFood,
+                    transport: totalTravel,
+                    accommodation: totalAccomdation,
+                    uniform: totalInventoryExpense,
+                    fines: totalFines,
+                    bankCharges: bankCharge,
+                    welfare: includeWelfare ? 200 : 0,
+                    loan: totalLoan
+                },
+                netSalary: netSalary
+            }
+        };
+
+        const response = await savePayroll(payrollData);
+        
+        if (response.status === 201) {
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
+        }
+    } catch (error) {
+        console.error('Error saving payroll:', error);
+        // Handle error (show notification, etc.)
+    } finally {
+        setIsSaving(false);
+    }
+};
+
     return (
         <Card
-            title={<Title level={3}>Monthly Payslip - May 2025</Title>}
+            title={   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection:'column', justifyContent: 'space-between', padding: '8px 0' }}>
+           <Title style={{ margin: '0' }} level={3}>Monthly Payslip - {monthYear}</Title>
+            { existingPayroll && <Title style={{ margin: '0' }} level={5}>Last updated - {dayjs(existingPayroll.updated_at).format('YYYY-MM-DD')}</Title>} 
+            </div>
+            <Button 
+                type="primary" 
+                onClick={handleSavePayroll}
+                loading={isSaving}>
+                {saveSuccess ? 'Saved!' : 'Save Payroll'}
+            </Button>
+        </div>}
             style={{ maxWidth: 600, margin: '0 auto', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
         >
             {security && (

@@ -154,6 +154,8 @@ const EditSecurity = ({ securityData, back }: editProps) => {
                 return;
                 // throw new Error("SecurityPhoto Removed or Not Uploaded")
             }
+
+            values['securityId'] = securityId;
             await axios.put(`/api/securities/${securityId}`, values);
             await saveBankDetails();
             console.log("Security: ",values);

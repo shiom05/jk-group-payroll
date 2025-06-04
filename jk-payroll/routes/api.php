@@ -17,6 +17,7 @@ use App\Http\Controllers\SecurityLocationAllocationController;
 use App\Http\Controllers\SecurityShiftLogController;
 use App\Http\Controllers\SecurityBlackMarkController;
 use App\Http\Controllers\SecurityCompensationController;
+use App\Http\Controllers\PayrollController;
 
 
 Route::apiResource('api/securities', SecurityController::class)->withoutMiddleware(['auth:api']);
@@ -156,4 +157,18 @@ Route::prefix('api/compensation')->group(function () {
     Route::get('/current-month/{security_id}', [SecurityCompensationController::class, 'getCurrentMonthCompensations']);
     
 
+});
+
+Route::prefix('api/payrolls')->group(function () {
+    // Basic CRUD routes
+    Route::get('/', [PayrollController::class, 'index']);
+    Route::post('/', [PayrollController::class, 'store']);
+    Route::put('/{payroll}', [PayrollController::class, 'update']);
+    
+    // Month-based routes
+    Route::get('/month/{month}', [PayrollController::class, 'getByMonth']);
+    
+    // Security-specific routes
+    Route::get('/security/{securityId}', [PayrollController::class, 'getBySecurity']);
+    Route::get('/security/{securityId}/month/{month}', [PayrollController::class, 'getBySecurityAndMonth']);
 });
