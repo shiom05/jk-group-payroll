@@ -51,7 +51,9 @@ const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryIte
   const { data, setData, post, processing } = useForm<any>({
     security_id: '',
     items: [],
-    transaction_date: new Date().toISOString().split('T')[0] 
+    transaction_date: new Date().toISOString().split('T')[0],
+    start_date: new Date().toISOString().split('T')[0],
+    installments: 1,
   });
 
   const handleSubmit = async () => {
@@ -154,6 +156,21 @@ const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryIte
                           onChange={(date) => setData('transaction_date', date?.format('YYYY-MM-DD') || '')}
                           style={{ width: '100%' }}
                       />
+                  </Form.Item>
+
+                   <Form.Item label={"Repayment Start Date"} required>
+                            <DatePicker
+                              value={data.start_date ? dayjs(data.start_date) : undefined}
+                              onChange={(date) => setData('start_date', date ? date.toISOString() : '')}
+                            />
+                    </Form.Item>
+
+                  <Form.Item label="Installments" required>
+                              <InputNumber
+                                min={1}
+                                value={data.installments}
+                                onChange={(val) => setData('installments', val)}
+                              />
                   </Form.Item>
 
                   <Form.Item label="Add Items">

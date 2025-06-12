@@ -70,7 +70,7 @@ const PayslipComponent = ({ totalShifts, expenses, inventoryExpenses, security, 
 
     const totalSalaryAdvances = existingPayroll? existingPayroll.parameters.deductions.salaryAdvances : useMemo(() => {
         return expenses.reduce((total: number, expense: any) => {
-            if(expense.type === "SalaryAdvance"){
+            if(expense.type === "Advances"){
                 total+= expense.amount;
             }
             return total;

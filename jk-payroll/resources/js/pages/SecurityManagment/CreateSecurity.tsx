@@ -187,7 +187,7 @@ const CreateSecurity = () => {
               <Col span={12}>
                 <Form.Item
                   label="SecurityId"
-                  name="SecurityId"
+                  name="securityId"
                   rules={[{ required: true, message: 'Please enter security Id' }]}
                 >
                   <Input />

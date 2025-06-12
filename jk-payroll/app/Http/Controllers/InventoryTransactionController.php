@@ -75,112 +75,44 @@ class InventoryTransactionController extends Controller
             ]);
         }
 
-
-        // public function allocatedInventoriesForSecurityCurrentMonth($securityId)
-        // {
-        //     $now = Carbon::now();
-        //     $startOfMonth = $now->copy()->startOfMonth()->toDateString();
-        //     $endOfMonth = $now->copy()->endOfMonth()->toDateString();
-
-        //     $allocations = InventoryTransaction::with(['items', 'security'])
-        //         ->where('type', 'allocation')
-        //         ->where('security_id', $securityId)
-        //         ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth])
-        //         ->orderBy('transaction_date', 'asc')
-        //         ->get();
-
-        //     $totalCost = $allocations->sum('total_value');
-
-        //     return response()->json([
-        //         'message' => "Allocated inventories for Security ID: {$securityId} in " . $now->format('F') . " retrieved successfully.",
-        //         'total_allocated_value' => $totalCost,
-        //         'data' => $allocations
-        //     ]);
-        // }
-
         public function allocatedInventoriesForSecurityCurrentMonth(Request $request, $securityId)
-{
-    // $now = Carbon::now();
-    $dateInput = $request->query('date');
-    $now =  $dateInput ? Carbon::parse($dateInput) : Carbon::now();
-    $startOfMonth = $now->copy()->startOfMonth()->toDateString();
-    $endOfMonth = $now->copy()->endOfMonth()->toDateString();
+        {
+            // $now = Carbon::now();
+            $dateInput = $request->query('date');
+            $now =  $dateInput ? Carbon::parse($dateInput) : Carbon::now(); 
+            $currentMonthStart = $now->copy()->startOfMonth();
+            $currentMonthEnd = $now->copy()->endOfMonth();
 
-    // Get all allocations in current month
-    $allocations = InventoryTransaction::with(['items', 'security'])
-        ->where('type', 'allocation')
-        ->where('security_id', $securityId)
-        ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth])
-        ->orderBy('transaction_date', 'asc')
-        ->get();
+            // Get all allocations in current month 
+            $allocations = InventoryTransaction::with(['items', 'security'])
+                ->where('type', 'allocation')
+                ->where('security_id', $securityId)
+                ->where(function ($query) use ($currentMonthStart, $currentMonthEnd) {
+                            $query->where('start_date', '<=', $currentMonthEnd)
+                                ->where(function($q) use ($currentMonthStart) {
+                                    $q->where(function($sub) use ($currentMonthStart) {
+                                        $sub->whereRaw(
+                                            "date(start_date, '+' || (installments - 1) || ' months') >= ?",
+                                            [$currentMonthStart->format('Y-m-d')]
+                                        );
+                                    })
+                                    ->orWhereNull('installments');
+                                });
+            })->get();
 
-    // Get all returns in current month for this security
-    $returns = InventoryTransaction::where('type', 'return')
-        ->where('security_id', $securityId)
-        ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth])
-        ->pluck('inventory_item_id')
-        ->toArray();
+            $totalCost = $allocations->sum('total_value');
 
-    // Filter out allocations that were returned in the same month
-    $activeAllocations = $allocations->reject(function ($allocation) use ($returns) {
-        // Check if any item in this allocation was returned
-        return $allocation->items->pluck('id')->intersect($returns)->isNotEmpty();
-    });
+            $totalInstallmentPayments = $allocations->sum(function($allocation) {
+                return $allocation->getTotalValueAttributePerInstallment();
+            });
 
-    $totalCost = $activeAllocations->sum('total_value');
-
-    return response()->json([
-        'message' => "Active allocated inventories for Security ID: {$securityId} in " . $now->format('F') . " retrieved successfully.",
-        'total_allocated_value' => $totalCost,
-        'data' => $activeAllocations,
-        'filtered_out_returns' => count($allocations) - count($activeAllocations)
-    ]);
-}
-
-
-        // public function returnInventory(Request $request)
-        // {
-        //     $validated = $request->validate([
-        //         // 'employee_id' => 'required|exists:users,id',
-        //         'security_id' => 'required|exists:securities,securityId',
-        //         'items' => 'required|array|min:1',
-        //         'items.*.id' => 'required|exists:inventory_items,id',
-        //         'items.*.quantity' => 'required|integer|min:1',
-        //         'transaction_date' => 'required|date',
-        //         // 'original_transaction_id' => 'nullable|exists:inventory_transactions,id'
-        //     ]);
-
-        //     return DB::transaction(function () use ($validated) {
-        //         $transaction = InventoryTransaction::create([
-        //             'type' => 'return',
-        //             'security_id' => $validated['security_id'],
-        //             'transaction_date' => $validated['transaction_date'],
-        //             'notes' => "Return items"
-        //         ]);
-
-        //         foreach ($validated['items'] as $item) {
-        //             $originalItem = InventoryItems::find($item['id']);
-                    
-        //             // Create returned inventory record
-        //             $returnedItem = $originalItem->replicate();
-        //             $returnedItem->condition = 'returned';
-        //             $returnedItem->quantity = $item['quantity'];
-        //             $returnedItem->save();
-
-        //             $transaction->items()->create([
-        //                 'inventory_item_id' => $returnedItem->id,
-        //                 'quantity' => $item['quantity'],
-        //                 'unit_price' => $returnedItem->current_value,
-        //                 'condition' => 'returned'
-        //             ]);
-        //         }
-
-        //         return response()->json([
-        //             'message' => 'Items returned successfully',
-        //             'transaction_id' => $transaction->id
-        //         ]);
-        //     });
-        // }
+            return response()->json([
+                'message' => "Active allocated inventories for Security ID: {$securityId} in " . $now->format('F') . " retrieved successfully.",
+                'total_allocated_value' => $totalCost,
+                'total_installment_payments' => $totalInstallmentPayments,
+                'data' => $allocations,
+            ]);
+        }
 
         public function returnInventory(Request $request)
         {
@@ -244,7 +176,11 @@ class InventoryTransactionController extends Controller
             });
         }
 
-    //  public function returnInventory(Request $request)
+
+
+   
+   
+    //     public function returnInventory(Request $request)
     // {
     //     $validated = $request->validate([
     //         'security_id' => 'required|exists:securities,securityId',
@@ -255,62 +191,98 @@ class InventoryTransactionController extends Controller
     //     ]);
 
     //     return DB::transaction(function () use ($validated) {
-    //         $transaction = InventoryTransaction::create([
+    //         $returnTransaction = InventoryTransaction::create([
     //             'type' => 'return',
     //             'security_id' => $validated['security_id'],
     //             'transaction_date' => $validated['transaction_date'],
     //             'notes' => "Return items"
     //         ]);
 
+    //         $totalValueReturned = 0;
+    //         $originalAllocations = [];
+
     //         foreach ($validated['items'] as $item) {
-    //             $originalItem = InventoryItems::findOrFail($item['id']);
-                
-    //             // Verify original item has sufficient quantity
-    //             if ($originalItem->quantity < $item['quantity']) {
-    //                 throw new \Exception("Not enough quantity available for item {$originalItem->id}");
-    //             }
+    //             $originalItem = InventoryItems::find($item['id']);
 
-    //             // Find or create returned item
-    //             $returnedItem = InventoryItems::firstOrNew([
-    //                 'inventory_type_id' => $originalItem->inventory_type_id,
-    //                 'size' => $originalItem->size,
-    //                 'condition' => 'returned'
-    //             ], [
-    //                 'purchase_price' => $originalItem->purchase_price / 2, // Half price
-    //                 'purchase_date' => now(),
-    //                 'is_available' => true,
-    //                 'last_restocked_at' => now()
-    //             ]);
+    //             $returnedItem = InventoryItems::firstOrCreate(
+    //                 [
+    //                     'inventory_type_id' => $originalItem->inventory_type_id,
+    //                     'size' => $originalItem->size,
+    //                     'condition' => 'returned'
+    //                 ],
+    //                 [
+    //                     'purchase_price' => $originalItem->purchase_price / 2,
+    //                     'purchase_date' => $originalItem->purchase_date,
+    //                     'quantity' => 0,
+    //                     'is_available' => true,
+    //                     'last_restocked_at' => now()
+    //                 ]
+    //             );
 
-    //             // Update returned item
-    //             $returnedItem->quantity += $item['quantity'];
-    //             $returnedItem->save();
+    //             $returnedItem->increment('quantity', $item['quantity']);
 
-    //             // Create transaction item
-    //             $transaction->items()->create([
+    //             $returnTransaction->items()->create([
     //                 'inventory_item_id' => $returnedItem->id,
     //                 'quantity' => $item['quantity'],
-    //                 'unit_price' => $returnedItem->purchase_price,
+    //                 'unit_price' => $returnedItem->current_value,
     //                 'condition' => 'returned'
     //             ]);
 
-    //             // Reduce original item quantity
-    //             $originalItem->quantity -= $item['quantity'];
-    //             $originalItem->save();
+        
+    //             // $allocations = InventoryTransaction::where('type', 'allocation')
+    //             //     ->where('security_id', $validated['security_id'])
+    //             //     ->whereHas('items', function($q) use ($originalItem) {
+    //             //         $q->where('inventory_item_id', $originalItem->id);
+    //             //     })
+    //             //     ->with('items')
+    //             //     ->get();
+
+    //             // foreach ($allocations as $allocation) {
+    //             //     $valueReturned = $item['quantity'] * $originalItem->purchase_price;
+    //             //     $totalValueReturned += $valueReturned;
+
+    //             //     $originalAllocations[$allocation->id] = [
+    //             //         'allocation' => $allocation,
+    //             //         'value_returned' => $valueReturned,
+    //             //         'items_returned' => $item['quantity']
+    //             //     ];
+    //             // } //ask how you deduct returns from monthly installments
     //         }
 
+    //         // foreach ($originalAllocations as $data) {
+    //         //     $allocation = $data['allocation'];
+    //         //     $valueReturned = $data['value_returned'];
+                
+    //         //     $returnDate = Carbon::parse($validated['transaction_date']);
+    //         //     $startDate = Carbon::parse($allocation->start_date);
+                
+    //         //     if ($returnDate > $startDate) {
+    //         //         $monthsPassed = $startDate->diffInMonths($returnDate);
+    //         //         $remainingInstallments = $allocation->installments - $monthsPassed;
+                    
+    //         //         if ($remainingInstallments > 0) {
+    //         //             $originalTotal = $allocation->total_value;
+    //         //             $remainingValue = $originalTotal - $valueReturned;
+    //         //             $newInstallment = round($remainingValue / $remainingInstallments, 2);
+                        
+    //         //             $allocation->update([
+    //         //                 'total_value' => $remainingValue,
+    //         //                 'installments' => $remainingInstallments
+    //         //             ]);
+    //         //         }
+    //         //     }
+    //         // }
+
     //         return response()->json([
-    //             'message' => 'Items returned successfully',
-    //             'transaction_id' => $transaction->id,
-    //             'transaction' => $transaction
+    //             'message' => 'Items returned and payments adjusted successfully',
+    //             'transaction_id' => $returnTransaction->id,
+    //             // 'total_value_returned' => $totalValueReturned,
+    //             // 'adjusted_allocations' => $originalAllocations
     //         ]);
     //     });
     // }
 
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreInventoryTransactionRequest $request)
     {
         $validated = $request->validate([
@@ -318,14 +290,18 @@ class InventoryTransactionController extends Controller
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|exists:inventory_items,id',
             'items.*.quantity' => 'required|integer|min:1',
-            'transaction_date' => 'required|date'
+            'transaction_date' => 'required|date',
+            'installments' => 'required|integer|min:1',
+            'start_date' => 'required|date',
         ]);
 
         return DB::transaction(function () use ($validated) {
             $transaction = InventoryTransaction::create([
                 'type' => 'allocation',
                 'security_id' => $validated['security_id'],
-                'transaction_date' => $validated['transaction_date']
+                'transaction_date' => $validated['transaction_date'],
+                'installments' => $validated['installments'],
+                'start_date' => $validated['start_date'],
             ]);
 
             foreach ($validated['items'] as $item) {

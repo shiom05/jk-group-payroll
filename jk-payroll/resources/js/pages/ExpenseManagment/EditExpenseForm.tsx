@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Form, Input, InputNumber, Button, Select, DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import { editExpenseSecurity, editLoanSecurity } from '@/services/security-managment.service';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 interface ExpenseFormProps {
   initialData?: any;
@@ -12,6 +14,9 @@ interface ExpenseFormProps {
 
 export default function EditExpenseForm({ initialData, onCancelUpdate, onCancelLoanUpdate, isLoanEdit }: ExpenseFormProps) {
   const [form] = Form.useForm();
+ const [loading, setLoading] = useState(false);
+
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
 
   useEffect(() => {
 
@@ -41,9 +46,18 @@ export default function EditExpenseForm({ initialData, onCancelUpdate, onCancelL
             start_date: dayjs(values.start_date).format('YYYY-MM-DD'),
         };
         console.log(formattedData);
-        const result = await editLoanSecurity(id, formattedData);
-        console.log(result);
-        onCancelLoanUpdate?.();
+        try {
+          setLoading(true);
+          const result = await editLoanSecurity(id, formattedData);
+          setTimeout(() => {
+            onCancelLoanUpdate?.();
+          }, 1000);
+          notifySuccess('SUCCESS', 'Loan updated successfully');
+        } catch (error) {
+          notifyError('ERROR', 'Failed to update loan');
+        }finally{
+          setLoading(false);
+        }
 
     }else{
         const { security,created_at, updated_at, id, ...rest } = initialData;
@@ -51,11 +65,18 @@ export default function EditExpenseForm({ initialData, onCancelUpdate, onCancelL
             ...rest,
             ...values,
             date: dayjs(values.date).format('YYYY-MM-DD'),
-          };
+          }; 
           console.log(formattedData);
-          const result = await editExpenseSecurity(id, formattedData);
-          console.log(result);
-          onCancelUpdate?.();
+          try {
+            setLoading(true);
+            const result = await editExpenseSecurity(id, formattedData);
+            setTimeout(() => {   onCancelUpdate?.(); }, 1000);
+            notifySuccess('SUCCESS', 'Expense updated successfully');
+          } catch (error) {
+            notifyError('ERROR', 'Failed to update Expense');
+          }finally{
+            setLoading(false);
+          }
     }
   };
 
@@ -69,6 +90,8 @@ export default function EditExpenseForm({ initialData, onCancelUpdate, onCancelL
       onFinish={handleFinish}
       className="mb-10! space-y-4 rounded-lg bg-white p-6! shadow-md"
     >
+            {contextHolder}
+      {loading && <Loader/>}
       <h2 className="text-2xl font-semibold text-gray-700">Edit Expense</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -77,7 +100,7 @@ export default function EditExpenseForm({ initialData, onCancelUpdate, onCancelL
             <Select.Option value="Food">Food</Select.Option>
             <Select.Option value="Travel">Travel</Select.Option>
             <Select.Option value="Accommodation">Accommodation</Select.Option>
-            <Select.Option value="SalaryAdvance">Salary Advance</Select.Option>
+            <Select.Option value="Advances">Salary Advance</Select.Option>
             <Select.Option value="Loan">Loan</Select.Option>
           </Select>
         </Form.Item>

@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-// import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Card, Button, Input, Select, Tabs } from 'antd';
+import type { SelectProps } from 'antd';
 import Layout from '@/layouts/Layout';
 import ManageLocations from './Locations/ManageLocations';
 import AssignSecurity from './AssignSecurity';
@@ -13,6 +9,16 @@ import { getLocation } from '@/services/location.service';
 import Security from '@/types/jk/security';
 import axios from 'axios';
 import SecurityShiftLogManager from './LogShift/logshift';
+
+
+import {
+  ScheduleOutlined
+} from '@ant-design/icons';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
+
+const { Option } = Select;
+const { TabPane } = Tabs;
 
 export default function ShiftManagement() {
   const [view, setView] = useState('locations');
@@ -23,77 +29,67 @@ export default function ShiftManagement() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [securityList, setSecurityList]= useState<Security[]>([]);
 
-    
-   const fetchLocations = async()=>{
-      const result = await getLocation();
-      setLocations(result.data);
-   }
+  const [loading, setLoading] = useState(false);
 
-   const fetchSecurities = async () => {
-    try {
-        const response = await axios.get('/api/securities');
-        setSecurityList(response.data);
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
+
+  const fetchLocations = async() => {
+    setLoading(true);
+     try {
+       const result = await getLocation();
+       setLocations(result.data);
     } catch (error) {
-        console.error('Error fetching securities:', error);
+      notifyError('ERROR', 'Failed to fetch locations');
+    }finally{
+      setLoading(false);
     }
-    };
+  }
 
-    useEffect(()=>{
-        fetchLocations();
-        fetchSecurities();
-    },[]);
-      
-    
+  const fetchSecurities = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('/api/securities');
+      setSecurityList(response.data);
+    } catch (error) {
+      notifyError('ERROR', 'Failed to fetch securities');
+    }finally{
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocations();
+    fetchSecurities();
+  }, []);
+
   return (
-      <Layout>
-          <div className="p-6">
-              <h1 className="mb-4 text-2xl font-bold">Shift Management</h1>
+    <Layout>
+      {contextHolder}
+      {loading && <Loader/>}
 
-              <div className="mb-4 flex gap-2">
-                  <Button
-                      onClick={() => setView('locations')}
-                      className={`rounded-md px-4 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
-                          view === 'locations'
-                              ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700'
-                              : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                  >
-                      Manage Locations
-                  </Button>
+      <div style={{ padding: 24 }}>
+        <h1 style={{ marginBottom: 24, fontSize: '1.5rem', fontWeight: 'bold' }}>
+         <ScheduleOutlined /> Shift Management
+        </h1>
 
-                  <Button
-                      onClick={() => setView('assignments')}
-                      className={`rounded-md px-4 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
-                          view === 'assignments'
-                              ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700'
-                              : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                  >
-                      Assign Securities
-                  </Button>
+        <Tabs
+          activeKey={view}
+          onChange={setView}
+          tabBarStyle={{ marginBottom: 24 }}
+        >
+          <TabPane tab="Manage Locations" key="locations" />
+          <TabPane tab="Assign Securities" key="assignments" />
+          <TabPane tab="Log Shifts" key="logs" />
+        </Tabs>
 
-                  <Button
-                      onClick={() => setView('logs')}
-                      className={`rounded-md px-4 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
-                          view === 'logs'
-                              ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700'
-                              : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                  >
-                      Log Shifts
-                  </Button>
-              </div>
-
-              {view === 'locations' && <ManageLocations></ManageLocations>}
-
-              {view === 'assignments' && (
-                <AssignSecurity securities={securityList} locations={locations}></AssignSecurity>
-              )}
-
-              {view === 'logs' && (
-                <SecurityShiftLogManager />
-              )}
-          </div>
-      </Layout>
+        <Card>
+          {view === 'locations' && <ManageLocations />}
+          {view === 'assignments' && (
+            <AssignSecurity securities={securityList} locations={locations} />
+          )}
+          {view === 'logs' && <SecurityShiftLogManager />}
+        </Card>
+      </div>
+    </Layout>
   );
 }

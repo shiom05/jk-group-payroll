@@ -101,7 +101,7 @@ const PayrolManagment = () => {
     const getCurrentMonthInventory = async (security:Security) => {
         setLoading(true);
         const result = await getAllocatedInventoriesForSecuriyCurrentMonth(security.securityId, selectedDate);
-        setInventoryData(result.data.total_allocated_value);    
+        setInventoryData(result.data.total_installment_payments);    
         setLoading(false); 
     };
     const getCurrentMonthLoan = async (security:Security) => {

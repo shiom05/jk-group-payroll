@@ -35,13 +35,16 @@ const LeaveManagement = () => {
 
   const deleteLeave = async (id: number) => {
     try {
-      console.log(id)
+      console.log(id);
+        setLoading(true)
       await axios.delete(`api/security-leaves/${id}`);
        notifySuccess('SUCCESS', 'Leave Deleted Successfully');
       fetchLeaves();
     } catch (error) {
       console.error('Failed to delete leave:', error);
       notifyError('ERROR', 'Something Went Wrong Deleting Leave, Please Try Again!');
+    } finally {
+      setLoading(false);
     }
   };
 

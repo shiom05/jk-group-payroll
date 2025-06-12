@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Button, Form, Input, Select, DatePicker, Card, Space, message } from 'antd';
 import dayjs from 'dayjs';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -15,6 +17,10 @@ const leaveReasons: { [key: string]: string[] } = {
 const EditLeave = ({ leave, onClose, onUpdate }: { leave: any; onClose: () => void, onUpdate: () => void }) => {
   const [form] = Form.useForm();
   const [selectedType, setSelectedType] = useState<string>(leave?.leaveType);
+
+  const [loading, setLoading] = useState(false);
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
+  
    console.log(leave)
   useEffect(() => {
     form.setFieldsValue({
@@ -27,6 +33,7 @@ const EditLeave = ({ leave, onClose, onUpdate }: { leave: any; onClose: () => vo
   const handleSubmit = async (values: any) => {
     const { security,updated_at,created_at,leave_id, ...rest} = leave;
     try {
+       setLoading(true)
       await axios.put(`/api/security-leaves/${leave_id}`, {
         ...rest,
         ...values,
@@ -34,16 +41,23 @@ const EditLeave = ({ leave, onClose, onUpdate }: { leave: any; onClose: () => vo
          start_date: values.start_date.format('YYYY-MM-DD'),
          end_date: values.end_date.format('YYYY-MM-DD'),
       });
-      message.success('Leave updated successfully');
-      onUpdate();
+      message.success('');
+      notifySuccess('SUCCESS', 'Leave updated successfully');
+      setTimeout(() => {
+        onUpdate();
+      },  1000);
     } catch (error) {
-      message.error('Failed to update leave');
+      notifyError('ERROR', 'Failed to update leave');
       console.error('Failed to update leave:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Card title="Edit Leave" className="mb-6 shadow-md">
+       {contextHolder}
+      {loading && <Loader/>}
       <Form layout="vertical" form={form} onFinish={handleSubmit}>
         <Form.Item name="leave_type" label="Leave Type" rules={[{ required: true }]}>
           <Select onChange={(value) => setSelectedType(value)}>

@@ -16,6 +16,8 @@ return new class extends Migration
             $table->enum('type', ['allocation', 'return']);
             $table->string('security_id');
             $table->date('transaction_date');
+            $table->date('start_date')->nullable();
+            $table->integer('installments')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
 

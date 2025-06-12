@@ -42,14 +42,14 @@ export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps
 
   const handleFinish = async () => {
       if (!data.type || !data.date || !data.amount || (mode === 'security' && !data.security_id)) {
-          message.error('Please fill all required fields');
+          notifyError('ERROR', 'Please fill all required fields');
           return;
       }
 
       const formattedDate = typeof data.date === 'string' ? data.date : dayjs(data.date).format('YYYY-MM-DD');
 
       if (mode === 'general' && data.type === 'Loan') {
-          message.error('Loans can only be added to securities');
+         notifyError('ERROR', 'Loans can only be added to securities');
           return;
       }
 
@@ -68,7 +68,9 @@ export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps
               const response = await createLoanSecurity(loanPayload);
               console.log(response);
               notifySuccess('SUCCESS', 'Successfully Created Loan');
-              onCancel();
+              setTimeout(() => {
+                  onCancel();
+              }, 1000);
           } catch (error) {
               notifyError('ERROR', 'Failed to Create Loan');
           } finally {
@@ -85,7 +87,9 @@ export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps
               setLoading(true);
               const result = await createExpenseSecurity(expensePayload);
               notifySuccess('SUCCESS', 'Successfully Created Expense');
-              onCancel();
+              setTimeout(() => {
+                  onCancel();
+              }, 1000);
           } catch (error) {
               notifyError('ERROR', 'Failed to Create Expense');
           } finally {
@@ -134,7 +138,7 @@ export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps
             <Select.Option value="Food">Food</Select.Option>
             <Select.Option value="Travel">Travel</Select.Option>
             <Select.Option value="Accommodation">Accommodation</Select.Option>
-            <Select.Option value="SalaryAdvance">Salary Advance</Select.Option>
+            <Select.Option value="Advances">Salary Advance</Select.Option>
             {mode === 'security' && <Select.Option value="Loan">Loan</Select.Option>}
           </Select>
         </Form.Item>

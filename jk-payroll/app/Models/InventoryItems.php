@@ -64,3 +64,4 @@ class InventoryItems extends Model
         });
     }
 }
+        

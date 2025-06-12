@@ -24,10 +24,15 @@ class InventoryTransactionItem extends Model
         return $this->belongsTo(InventoryTransaction::class);
     }
 
+    // public function inventoryItem(): BelongsTo
+    // {
+    //     return $this->belongsTo(InventoryItem::class);
+    // }
+
     public function inventoryItem(): BelongsTo
-    {
-        return $this->belongsTo(InventoryItem::class);
-    }
+{
+    return $this->belongsTo(InventoryItem::class, 'inventory_item_id');
+}
 
 
 }
