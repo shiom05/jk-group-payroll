@@ -1,9 +1,28 @@
 import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { saveInventory } from '@/services/security-managment.service';
+import { 
+  Form, 
+  Input, 
+  Select, 
+  DatePicker, 
+  Button, 
+  Card, 
+  Typography, 
+  Row, 
+  Col,
+  message 
+} from 'antd';
+import dayjs from 'dayjs';
+import Loader from '@/components/ui/loader';
+import useNotification from '@/hooks/useNotification';
+
+const { Title } = Typography;
+const { Option } = Select;
 
 const CreateInventory = ({ types, handleBack }: { types: any, handleBack: ()=> void}) => {
     const [selectedType, setSelectedType] = useState<any>(null);
+    const [form] = Form.useForm();
     const { data, setData, post, processing, errors } = useForm({
         inventory_type_id: '',
         size: '',
@@ -11,26 +30,42 @@ const CreateInventory = ({ types, handleBack }: { types: any, handleBack: ()=> v
         purchase_price: '',
         purchase_date: new Date().toISOString().split('T')[0]
     });
+  const [loading, setLoading] = useState(false);
 
-    const handleTypeChange = (e: any) => {
-        const typeId = e.target.value;
-        const type = types.find((t:any) => t.id == typeId);
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
+  
+    const handleTypeChange = (value: string) => {
+        const type = types.find((t:any) => t.id == value);
         setSelectedType(type);
         setData({
             ...data,
-            inventory_type_id: typeId,
+            inventory_type_id: value,
             size: '',
-            purchase_price: type?.standard_price || ''
+            purchase_price: ''
+        });
+        form.setFieldsValue({
+            size: '',
+            purchase_price: ''
         });
     };
 
-    const handleSubmit = async(e: any) => {
-        e.preventDefault();
-        console.log(data);
-        const result = await saveInventory(data);
-        console.log(result);
-        handleBack();
-        // post(route('inventory.items.store'));
+    const handleSubmit = async(values: any) => {
+        try {
+            setLoading(true);
+            console.log(data);
+            const result = await saveInventory(data);
+            console.log(result);
+            notifySuccess('SUCCESS', 'Inventory item saved successfully');
+           setTimeout(() => {
+                 handleBack();
+           }, 1000);
+
+        } catch (error) {
+            notifyError('ERROR', 'Failed to save inventory item');
+            console.error(error);
+        }finally {
+            setLoading(false);
+        }
     };
 
     const generateSizes = (range: string) => {
@@ -45,133 +80,134 @@ const CreateInventory = ({ types, handleBack }: { types: any, handleBack: ()=> v
     };
 
     return (
-        // <Layout>
-            <div className="py-12">
-                <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <h2 className="text-2xl font-semibold mb-6">Add Inventory Item</h2>
+        <div style={{ padding: '24px' }}>
+              {contextHolder}
+      {loading && <Loader/>}
+            <Row justify="center">
+                <Col xs={24} lg={18}>
+                    <Card>
+                        <Title level={2} style={{ marginBottom: '24px' }}>Add Inventory Item</Title>
                         
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Item Type
-                                    </label>
-                                    <select
-                                        value={data.inventory_type_id}
-                                        onChange={handleTypeChange}
-                                        className="w-full rounded-md border p-2 shadow-sm"
-                                        required
+                        <Form
+                            form={form}
+                            layout="vertical"
+                            onFinish={handleSubmit}
+                            initialValues={{
+                                ...data,
+                                purchase_date: dayjs(data.purchase_date)
+                            }}
+                        >
+                            <Row gutter={16}>
+                                <Col xs={24} md={12}>
+                                    <Form.Item
+                                        label="Item Type"
+                                        name="inventory_type_id"
+                                        validateStatus={errors.inventory_type_id ? 'error' : ''}
+                                        help={errors.inventory_type_id}
+                                        rules={[{ required: true, message: 'Please select item type' }]}
                                     >
-                                        <option value="">Select Type</option>
-                                        {types.map((type: any) => (
-                                            <option key={type.id} value={type.id}>
-                                                {type.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.inventory_type_id && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.inventory_type_id}</p>
-                                    )}
-                                </div>
+                                        <Select
+                                            placeholder="Select Type"
+                                            onChange={handleTypeChange}
+                                        >
+                                            {types.map((type: any) => (
+                                                <Option key={type.id} value={type.id}>
+                                                    {type.name}
+                                                </Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
 
                                 {selectedType?.track_size && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Size
-                                        </label>
-                                        <select
-                                            value={data.size}
-                                            onChange={(e) => setData('size', e.target.value)}
-                                            className="w-full rounded-md border p-2 shadow-sm"
-                                            required
+                                    <Col xs={24} md={12}>
+                                        <Form.Item
+                                            label="Size"
+                                            name="size"
+                                            validateStatus={errors.size ? 'error' : ''}
+                                            help={errors.size}
+                                            rules={[{ required: true, message: 'Please select size' }]}
                                         >
-                                            <option value="">Select Size</option>
-                                            {generateSizes(selectedType.size_range).map((size: any) => (
-                                                <option key={size} value={size}>
-                                                    {size}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.size && (
-                                            <p className="mt-1 text-sm text-red-600">{errors.size}</p>
-                                        )}
-                                    </div>
+                                            <Select placeholder="Select Size">
+                                                {generateSizes(selectedType.size_range).map((size: any) => (
+                                                    <Option key={size} value={size}>
+                                                        {size}
+                                                    </Option>
+                                                ))}
+                                            </Select>
+                                        </Form.Item>
+                                    </Col>
                                 )}
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Quantity
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        value={data.quantity}
-                                        onChange={(e: any) => setData('quantity', e.target.value)}
-                                        className="w-full rounded-md border p-2 shadow-sm"
-                                        required
-                                    />
-                                    {errors.quantity && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.quantity}</p>
-                                    )}
-                                </div>
+                                <Col xs={24} md={12}>
+                                    <Form.Item
+                                        label="Quantity"
+                                        name="quantity"
+                                        validateStatus={errors.quantity ? 'error' : ''}
+                                        help={errors.quantity}
+                                        rules={[{ required: true, message: 'Please enter quantity' }]}
+                                    >
+                                        <Input 
+                                            type="number" 
+                                            min={1} 
+                                            onChange={(e: any) => setData('quantity', e.target.value)}
+                                        />
+                                    </Form.Item>
+                                </Col>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Purchase Price
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={data.purchase_price}
-                                        onChange={(e) => setData('purchase_price', e.target.value)}
-                                        className="w-full rounded-md border p-2 shadow-sm"
-                                        required
-                                    />
-                                    {errors.purchase_price && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.purchase_price}</p>
-                                    )}
-                                </div>
+                                <Col xs={24} md={12}>
+                                    <Form.Item
+                                        label="Purchase Price"
+                                        name="purchase_price"
+                                        validateStatus={errors.purchase_price ? 'error' : ''}
+                                        help={errors.purchase_price}
+                                        rules={[{ required: true, message: 'Please enter purchase price' }]}
+                                    >
+                                        <Input 
+                                            type="number" 
+                                            step="0.01" 
+                                            min={0} 
+                                            onChange={(e) => setData('purchase_price', e.target.value)}
+                                        />
+                                    </Form.Item>
+                                </Col>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Purchase Date
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={data.purchase_date}
-                                        onChange={(e) => setData('purchase_date', e.target.value)}
-                                        className="w-full rounded-md border p-2 shadow-sm"
-                                        required
-                                    />
-                                    {errors.purchase_date && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.purchase_date}</p>
-                                    )}
-                                </div>
-                            </div>
+                                <Col xs={24} md={12}>
+                                    <Form.Item
+                                        label="Purchase Date"
+                                        name="purchase_date"
+                                        validateStatus={errors.purchase_date ? 'error' : ''}
+                                        help={errors.purchase_date}
+                                        rules={[{ required: true, message: 'Please select purchase date' }]}
+                                    >
+                                        <DatePicker 
+                                            style={{ width: '100%' }}
+                                            onChange={(date, dateString: any) => setData('purchase_date', dateString)}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
 
-                            <div className="flex justify-end space-x-4 mt-8">
-                                <button
-                                    type="button"
+                            <Form.Item style={{ marginTop: '32px', textAlign: 'right' }}>
+                                <Button 
+                                    style={{ marginRight: '16px' }}
                                     onClick={handleBack}
-                                    className="rounded-md bg-gray-200 px-4 py-2 text-gray-800 shadow-md transition hover:bg-gray-300"
                                 >
                                     Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="rounded-md bg-blue-600 px-4 py-2 text-white shadow-md transition hover:bg-blue-700"
+                                </Button>
+                                <Button 
+                                    type="primary" 
+                                    htmlType="submit"
+                                    loading={processing}
                                 >
-                                    {processing ? 'Saving...' : 'Save Item'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        // </Layout>
+                                    Save Item
+                                </Button>
+                            </Form.Item>
+                        </Form>
+                    </Card>
+                </Col>
+            </Row>
+        </div>
     );
 };
 

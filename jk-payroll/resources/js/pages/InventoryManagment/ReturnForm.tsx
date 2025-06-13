@@ -8,6 +8,8 @@ import { UndoOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import Security from '@/types/jk/security';
 import { getAsset, returnAsset, returnInventory } from '@/services/security-managment.service';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 // Interfaces
 export interface InventoryType {
@@ -55,6 +57,10 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
   const [selectedSecurityId, setSelectedSecurityId] = useState<number | null>(null);
   const [allocatedInventory, setAllocatedInventory] = useState<AllocationItem[]>([]);
 
+  const [loading, setLoading] = useState(false);
+
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
+
   const { data, setData, post, processing } = useForm<any>({
     security_id: '',
     items: [] as AllocationItem[],
@@ -82,19 +88,29 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
               };
           }),
       };
-
-      console.log('Return data:', returndata);
-      console.log('assetRemoveReq', assetRemoveReq);
-
-      const result = await returnInventory(returndata);
-      if (result.data && result.data.transaction_id) {
+      
+      try {
+        setLoading(true);
+        const result = await returnInventory(returndata);
+         if (result.data && result.data.transaction_id) {
           const res = await returnAsset(assetRemoveReq);
-          console.log(res);
-          location.reload();
+          notifySuccess('SUCCESS', 'Inventory returned successfully');
+          setTimeout(() => {
+            onSuccess?.();
+            onCancel();
+        }, 1000);
+      }
+      } catch (error) {
+        console.error('Error during return inventory:', error);
+        notifyError('ERROR', 'Failed to return inventory');
+      }finally {
+        setLoading(false);
       }
   };
 
   const fetchInventoryAllocationsforSecurityId = async () => {
+    try {
+    setLoading(true);
     const result = await getAsset(selectedSecurityId);
     if (result && result.data && result.data.data) {
       const list: AllocationItem[] = result.data.data.map((item: any) => ({
@@ -103,6 +119,11 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
         removeQuantity: 1
       }));
       setAllocatedInventory(list);
+    }
+    } catch (error) {
+       notifyError('ERROR', 'Failed to fetch allocated inventory'); 
+    }finally {
+      setLoading(false);
     }
   };
 
@@ -120,6 +141,9 @@ const ReturnForm: React.FC<ReturnFormProps> = ({
               </>
           }
       >
+        {contextHolder}
+        {loading && <Loader/>}
+
           <Form layout="vertical" onFinish={handleSubmit}>
               <Form.Item label="Security Officer" required>
                   <Select

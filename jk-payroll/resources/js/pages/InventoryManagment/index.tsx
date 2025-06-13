@@ -10,6 +10,8 @@ import EditInventory from './EditInventory';
 import AllocationForm from './AllocationForm';
 import Security from '@/types/jk/security';
 import ReturnForm from './ReturnForm';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 interface InventoryItem {
     id: number;
@@ -42,25 +44,59 @@ const InventoryManagement = () => {
 
     const [allocateInventory, setAllocateInventory] = useState<boolean>(false);
     const [returnInventory, setReturnInventory] = useState<boolean>(false);
+    const [loading, setLoading] = useState(false);
+    const { notifySuccess, notifyError, contextHolder } = useNotification();
 
     const getInventoryTypes = async()=>{
-      const result =  await fetchInventoryTypes();
-      setInventoryTypes(result.data)
+      setLoading(true);
+      try {
+        const result = await fetchInventoryTypes();
+        setInventoryTypes(result.data);
+      } catch (error) {
+        console.error('Error fetching inventory types:', error);
+        notifyError('ERROR', 'Failed to fetch inventory types');
+      } finally {
+        setLoading(false);
+      }
     }
 
     const getInventories = async()=>{
-        const result = await getInventoryitems()
-        setInventories(result.data);
+        setLoading(true);
+        try {
+            const result = await getInventoryitems();
+            setInventories(result.data);
+        } catch (error) {
+            console.error('Error fetching inventories:', error);
+            notifyError('ERROR', 'Failed to fetch inventories');
+        } finally {
+            setLoading(false);
+        }
     }
 
     const getSecurities = async() =>{
-        const result = await fetchSecurities();
-        setSecurities(result.data)
+        setLoading(true);
+        try {
+            const result = await fetchSecurities();
+            setSecurities(result.data);
+        } catch (error) {
+            console.error('Error fetching securities:', error);
+            notifyError('ERROR', 'Failed to fetch securities');
+        } finally {
+            setLoading(false);
+        }
     }
     const getSecuritiesofAllStatus = async() =>{
-        const result = await fetchAllStatusSecurities();
-        setSecuritiesToReturn(result.data)
-    } 
+        setLoading(true);
+        try {
+            const result = await fetchAllStatusSecurities();
+            setSecuritiesToReturn(result.data);
+        } catch (error) {
+            console.error('Error fetching securities of all status:', error);
+            notifyError('ERROR', 'Failed to fetch securities of all status');
+        } finally {
+            setLoading(false);
+        }
+    }
 
     useEffect(()=>{
         getInventoryTypes();
@@ -200,6 +236,8 @@ const InventoryManagement = () => {
       
     return (
         <Layout>
+            {contextHolder}
+                {loading && <Loader/>}
             <div className="p-10 pt-10">
                 <h1 className="mb-4 text-3xl font-bold text-gray-800"><AppstoreOutlined /> {renderHeader()}</h1>
              
@@ -248,10 +286,10 @@ const InventoryManagement = () => {
             )}
 
             {allocateInventory && !editingItem && !isCreatingNewinventory && !returnInventory && (
-                <AllocationForm onCancel={()=>setAllocateInventory(false)} employees={securities} inventoryItems={inventories} />
+                <AllocationForm onCancel={()=>setAllocateInventory(false)} employees={securities} inventoryItems={inventories} onSuccess={getInventories} />
             )}
 
-            {returnInventory && !editingItem && !isCreatingNewinventory && !allocateInventory && <ReturnForm onCancel={()=>setReturnInventory(false)} employees={securitiesToRetun} />}
+            {returnInventory && !editingItem && !isCreatingNewinventory && !allocateInventory && <ReturnForm onCancel={()=>setReturnInventory(false)} employees={securitiesToRetun} onSuccess={getInventories} />}
         </Layout>
     );
 };

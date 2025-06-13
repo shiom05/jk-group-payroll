@@ -1,23 +1,40 @@
+import Loader from '@/components/ui/loader';
+import useNotification from '@/hooks/useNotification';
 import { saveLocation } from '@/services/location.service';
 import { Button, Checkbox, Col, Form, Input, InputNumber, Row } from 'antd';
+import { useState } from 'react';
 
 const CreateLocation = ({ handleCancel }: { handleCancel: () => void }) => {
     const [form] = Form.useForm();
 
+      const [loading, setLoading] = useState(false); 
+    
+      const { notifySuccess, notifyError, contextHolder } = useNotification();
+
     const handleSubmit = async(values: any) => {
-        console.log(values);
-        const result = await saveLocation(values);
-        console.log(result);
-        if(result.data.success){
-            setTimeout(()=>{
-                handleCancel();
-            },2000)
+        setLoading(true);
+        try {
+            const result = await saveLocation(values);
+            if (result.data.success) {
+                setTimeout(() => {
+                    handleCancel();
+                }, 1000);
+            }
+        } catch (error) {
+            notifyError('Error', 'Failed to save location');
+        } finally {
+            setLoading(false);
+            notifySuccess('Success', 'Location saved successfully');
+            form.resetFields();
         }
+      
     };
 
     return (
         <>
             <Form form={form} onFinish={handleSubmit} layout="vertical" className="max-w mb-10! space-y-4 rounded-lg bg-white p-6! py-10! shadow-lg">
+                 {contextHolder}
+      {loading && <Loader/>}
                 <h2 className="mb-4 text-2xl font-semibold text-gray-700">Location Form</h2>
 
                 <Row gutter={16}>
@@ -48,27 +65,27 @@ const CreateLocation = ({ handleCancel }: { handleCancel: () => void }) => {
                 <Row gutter={16}>
                     <Col span={6}>
                         <Form.Item name="billing_OIC_HourlyRate" label="OIC Shift Rate">
-                            <InputNumber className="w-full" min={0} />
+                            <InputNumber className="w-full" step={100} min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="billing_JSO_HourlyRate" label="JSO Shift Rate">
-                            <InputNumber className="w-full" min={0} />
+                            <InputNumber className="w-full" step={100} min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="billing_CSO_HourlyRate" label="CSO Shift Rate">
-                            <InputNumber className="w-full" min={0} />
+                            <InputNumber className="w-full" step={100} min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="billing_SSO_HourlyRate" label="SSO Shift Rate">
-                            <InputNumber className="w-full" min={0} />
+                            <InputNumber className="w-full" step={100} min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="billing_LSO_HourlyRate" label="LSO Shift Rate">
-                            <InputNumber className="w-full" min={0} />
+                            <InputNumber className="w-full" step={100} min={0} />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -77,27 +94,27 @@ const CreateLocation = ({ handleCancel }: { handleCancel: () => void }) => {
                 <Row gutter={16}>
                     <Col span={6}>
                         <Form.Item name="paying_OIC_HourlyRate" label="OIC Shift Rate">
-                            <InputNumber className="w-full" min={0} />
+                            <InputNumber className="w-full" step={100} min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="paying_JSO_HourlyRate" label="JSO Shift Rate">
-                            <InputNumber className="w-full" min={0} />
+                            <InputNumber className="w-full" step={100} min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="paying_CSO_HourlyRate" label="CSO Shift Rate">
-                            <InputNumber className="w-full" min={0} />
+                            <InputNumber className="w-full" step={100} min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="paying_SSO_HourlyRate" label="SSO Shift Rate">
-                            <InputNumber className="w-full" min={0} />
+                            <InputNumber className="w-full" step={100} min={0} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="paying_LSO_HourlyRate" label="LSO Shift Rate">
-                            <InputNumber className="w-full" min={0} />
+                            <InputNumber className="w-full" step={100} min={0} />
                         </Form.Item>
                     </Col>
                 </Row>

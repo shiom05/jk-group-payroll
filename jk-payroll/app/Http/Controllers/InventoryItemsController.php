@@ -41,7 +41,8 @@ class InventoryItemsController extends Controller
             'size' => 'nullable|string',
             'quantity' => 'required|integer|min:1',
             'purchase_price' => 'required|numeric|min:0',
-            'purchase_date' => 'required|date'
+            'purchase_date' => 'required|date',
+            'last_restocked_at' => 'nullable|date',
         ]);
 
         $type = InventoryType::find($validated['inventory_type_id']);
@@ -60,7 +61,7 @@ class InventoryItemsController extends Controller
             // Update existing item
             $item->update([
                 'quantity' => $item->quantity + $validated['quantity'],
-                'last_restocked_at' => now(),
+                'last_restocked_at' =>  $validated['last_restocked_at'],
                 'is_available' => true
             ]);
         } else {
@@ -71,7 +72,7 @@ class InventoryItemsController extends Controller
                 'quantity' => $validated['quantity'],
                 'purchase_price' => $validated['purchase_price'],
                 'purchase_date' => $validated['purchase_date'],
-                'last_restocked_at' => now()
+                'last_restocked_at' =>  $validated['purchase_date']
             ]);
         }
 

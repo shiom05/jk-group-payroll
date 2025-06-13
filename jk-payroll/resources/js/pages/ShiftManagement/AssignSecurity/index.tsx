@@ -1,4 +1,4 @@
-import { Button, message, Steps, theme, Image } from 'antd';
+import { Button, message, Steps, theme, Image, Card, Tag, Row, Col, Typography, Collapse, Statistic } from 'antd';
 import React, { useState } from 'react';
 import SelectLocation from './SelectLocation';
 import SelectSecurity from './SelectSecurity';
@@ -6,236 +6,211 @@ import Confirm from './Confirm';
 import Security from '@/types/jk/security';
 import Location from '@/types/jk/location';
 
-interface AsignSecuirtyProps{
+const { Title, Text } = Typography;
+const { Panel } = Collapse;
+
+interface AsignSecuirtyProps {
   securities: Security[],
   locations: Location[]
 }
 
-const AsignSecuirty = ({securities, locations}:AsignSecuirtyProps) => {
-    
+const AsignSecuirty = ({ securities, locations }: AsignSecuirtyProps) => {
+  const { token } = theme.useToken();
+  const [current, setCurrent] = useState(0);
+  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [selectedSecurity, setSelectedSecurity] = useState<any>(null);
 
-    const { token } = theme.useToken();
-    const [current, setCurrent] = useState(0);
-    const [selectedLocation, setSelectedLocation]= useState<any>(null);
-    const [selectedSecurity, setSelectedSecurity]= useState<any>(null);
-    
-    const handleSelectLocation = (loc: any)=>{
-        console.log(loc)
-        setSelectedLocation(loc)
-    }
-    const handleSelectSecuirty = (sec: any)=>{
-        console.log(sec)
-        setSelectedSecurity(sec);
-    }
+  const handleSelectLocation = (loc: any) => {
+    console.log(loc)
+    setSelectedLocation(loc)
+  }
 
+  const handleSelectSecuirty = (sec: any) => {
+    console.log(sec)
+    setSelectedSecurity(sec);
+  }
 
-    const next = () => {
-        setCurrent(current + 1);
-    };
+  const next = () => {
+    setCurrent(current + 1);
+  };
 
-    const prev = () => {
-        setCurrent(current - 1);
-    };
-console.log(selectedLocation)
-    const steps = [
-        {
-            title: 'Select Location',
-            content: <SelectLocation onSelected={handleSelectLocation} locations={locations} selectedLocation={selectedLocation} />,
-        },
-        {
-            title: 'Select Security',
-            content: <SelectSecurity selectedSecurity={selectedSecurity} securityList={securities} onSelected={handleSelectSecuirty} />,
-        },
-        {
-            title: 'Complete Assign',
-            content: <Confirm  selectedLocation={selectedLocation} selectedSecurity={selectedSecurity}  />,
-        },
-    ];
-    const items = steps.map((item) => ({ key: item.title, title: item.title }));
+  const prev = () => {
+    setCurrent(current - 1);
+  };
 
-    const contentStyle: React.CSSProperties = {
-        lineHeight: '260px',
-        textAlign: 'center',
-        color: token.colorTextTertiary,
-        backgroundColor: token.colorFillAlter,
-        borderRadius: token.borderRadiusLG,
-        border: `1px dashed ${token.colorBorder}`,
-        marginTop: 16,
-    };
+  const steps = [
+    {
+      title: 'Select Location',
+      content: <SelectLocation onSelected={handleSelectLocation} locations={locations} selectedLocation={selectedLocation} />,
+    },
+    {
+      title: 'Select Security',
+      content: <SelectSecurity selectedSecurity={selectedSecurity} securityList={securities} onSelected={handleSelectSecuirty} />,
+    },
+    {
+      title: 'Complete Assign',
+      content: <Confirm selectedLocation={selectedLocation} selectedSecurity={selectedSecurity} />,
+    },
+  ];
 
-    
-    return (
-        <div className="p-5">
-        
-           <div className='pb-10 flex w-full! gap-x-6'>
+  const items = steps.map((item) => ({ key: item.title, title: item.title }));
 
-           <div className='w-1/2'>
-                {selectedLocation && (
-                    <div className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
-                    <div className="border-b border-gray-200 bg-blue-50 px-4 py-3">
-                      <h3 className="text-lg font-semibold text-green-800">
-                        SELECTED LOCATION
-                      </h3>
-                      <h4 className="text-md font-semibold text-gray-800">
-                        {selectedLocation.locationName}
-                      </h4>
-                      <p className="text-sm text-blue-600">
-                        {selectedLocation.locationType}
-                        {selectedLocation.isJkPropLocation && (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                            JK Property
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  
-                    <div className="p-4">
-                      <div className="mb-4">
-                        <h4 className="text-xs font-medium tracking-wider text-gray-500 uppercase">Address</h4>
-                        <p className="mt-1 whitespace-pre-line text-gray-700">
-                          {selectedLocation.address}
-                        </p>
-                      </div>
-                  
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="text-xs font-medium tracking-wider text-gray-500 uppercase mb-2">Billing Rates (LKR/hr)</h4>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="rounded border border-blue-100 bg-blue-50 p-2">
-                              <p className="text-xs font-medium text-blue-600">OIC</p>
-                              <p className="text-lg font-bold text-blue-800">
-                                {selectedLocation.billing_OIC_HourlyRate.toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="rounded border border-green-100 bg-green-50 p-2">
-                              <p className="text-xs font-medium text-green-600">JSO</p>
-                              <p className="text-lg font-bold text-green-800">
-                                {selectedLocation.billing_JSO_HourlyRate.toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="rounded border border-purple-100 bg-purple-50 p-2">
-                              <p className="text-xs font-medium text-purple-600">CSO</p>
-                              <p className="text-lg font-bold text-purple-800">
-                                {selectedLocation.billing_CSO_HourlyRate.toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="rounded border border-purple-100 bg-purple-50 p-2">
-                              <p className="text-xs font-medium text-purple-600">SSO</p>
-                              <p className="text-lg font-bold text-purple-800">
-                                {selectedLocation.billing_SSO_HourlyRate.toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="rounded border border-amber-100 bg-amber-50 p-2">
-                              <p className="text-xs font-medium text-amber-600">LSO</p>
-                              <p className="text-lg font-bold text-amber-800">
-                                {selectedLocation.billing_LSO_HourlyRate.toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                  
-                        <div>
-                          <h4 className="text-xs font-medium tracking-wider text-gray-500 uppercase mb-2">Paying Rates (LKR/hr)</h4>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="rounded border border-blue-100 bg-blue-50 p-2">
-                              <p className="text-xs font-medium text-blue-600">OIC</p>
-                              <p className="text-lg font-bold text-blue-800">
-                                {selectedLocation.paying_OIC_HourlyRate.toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="rounded border border-green-100 bg-green-50 p-2">
-                              <p className="text-xs font-medium text-green-600">JSO</p>
-                              <p className="text-lg font-bold text-green-800">
-                                {selectedLocation.paying_JSO_HourlyRate.toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="rounded border border-purple-100 bg-purple-50 p-2">
-                              <p className="text-xs font-medium text-purple-600">CSO</p>
-                              <p className="text-lg font-bold text-purple-800">
-                                {selectedLocation.paying_CSO_HourlyRate.toLocaleString()}
-                              </p>
-                            </div>
+  const contentStyle: React.CSSProperties = {
+    lineHeight: '260px',
+    textAlign: 'center',
+    color: token.colorTextTertiary,
+    backgroundColor: token.colorFillAlter,
+    borderRadius: token.borderRadiusLG,
+    border: `1px dashed ${token.colorBorder}`,
+    marginTop: 16,
+  };
 
-                            <div className="rounded border border-purple-100 bg-purple-50 p-2">
-                              <p className="text-xs font-medium text-purple-600">SSO</p>
-                              <p className="text-lg font-bold text-purple-800">
-                                {selectedLocation.paying_SSO_HourlyRate.toLocaleString()}
-                              </p>
-                            </div>
+  const renderRateCard = (title: string, value: number, color: string) => (
 
-                            <div className="rounded border border-amber-100 bg-amber-50 p-2">
-                              <p className="text-xs font-medium text-amber-600">LSO</p>
-                              <p className="text-lg font-bold text-amber-800">
-                                {selectedLocation.paying_LSO_HourlyRate.toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                    </div>
-                  </div>
-                )}
-           </div>
+    // <Statistic
+    //   title={title}
+    //   value={value}
+    //   valueStyle={{ 
+    //     fontSize: 14,
+    //     color: '#fff',
+    //     fontWeight: 'bold'
+    //   }}
+    //   prefix="LKR"
+    // />
+  <Tag color={"blue"} style={{
+    width: '100%',
+  }}>
+      <Statistic  title={title} value={value} valueStyle = {{ fontSize: 14, fontWeight: 'bold' }} />
+ </Tag>
+  );
 
-           <div>
-                {selectedSecurity && (
-                    <div className="max-w-sm overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
-                        <div className="border-b border-gray-200 bg-blue-50 px-4 py-3">
-                            <h3 className="text-lg font-semibold text-green-800 mb-2" id="location-name">
-                                SELECTED SECURITY
-                            </h3>
-                            <h4 className="text-md font-semibold text-gray-800" id="location-name">
-                                
-                                <Image
-                                    src={`/storage/${selectedSecurity.securityPhoto}`}
-                                    alt="Security Photo"
-                                    width={50}
-                                    height={50}
-                                    className="rounded-full object-cover"
-                                    preview={false}
-                                />
-                            </h4>
-                            <p className="text-sm text-blue-600" id="location-type">
-                                {selectedSecurity.securityId}
-                            </p>
-                        </div>
+  return (
+      <div style={{ padding: 20 }}>
+          <Row gutter={24} style={{ marginBottom: 24 }}>
+              <Col span={12}>
+                  {selectedLocation && (
+                      <Card
+                          title={
+                              <div className="p-5">
+                                  <Title level={5} style={{ color: '#389e0d', marginBottom: 0 }}>
+                                      {selectedLocation.locationName}
+                                  </Title>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, rowGap: 8 }}>
+                                      <Text type="secondary">{selectedLocation.locationType}</Text>
+                                      {selectedLocation.isJkPropLocation && <Tag color="green">JK Property</Tag>}
+                                  </div>
+                                  <Text style={{ display: 'block', marginBottom: 16 }}>{selectedLocation.address}</Text>
+                              </div>
+                          }
+                          key="1"
+                      >
+                          <Card>
+                              <Text strong>Billing Rates (LKR)</Text>
+                              <Row gutter={[8, 8]} style={{ marginBottom: 16,  marginTop: 16 }}>
+                                  <Col flex="20%">
+                                      <div style={{ paddingRight: 4 }}>
+                                          {renderRateCard('OIC', selectedLocation.billing_OIC_HourlyRate, '#1890ff')}
+                                      </div>
+                                  </Col>
+                                  <Col flex="20%">
+                                      <div style={{ paddingRight: 4 }}>
+                                          {renderRateCard('JSO', selectedLocation.billing_JSO_HourlyRate, '#52c41a')}
+                                      </div>
+                                  </Col>
+                                  <Col flex="20%">
+                                      <div style={{ paddingRight: 4 }}>
+                                          {renderRateCard('CSO', selectedLocation.billing_CSO_HourlyRate, '#722ed1')}
+                                      </div>
+                                  </Col>
+                                  <Col flex="20%">
+                                      <div style={{ paddingRight: 4 }}>
+                                          {renderRateCard('SSO', selectedLocation.billing_SSO_HourlyRate, '#722ed1')}
+                                      </div>
+                                  </Col>
+                                  <Col flex="20%">{renderRateCard('LSO', selectedLocation.billing_LSO_HourlyRate, '#faad14')}</Col>
+                              </Row>
 
-                        <div className="p-4">
-                            <div className="mb-4">
-                                <h4 className="text-xs font-medium tracking-wider text-gray-500 uppercase">Address</h4>
-                                <p className="mt-1 whitespace-pre-line text-gray-700" id="location-address">
-                                {selectedSecurity.securityName}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-           </div>
+                              <Text strong>Paying Rates (LKR)</Text>
+                              <Row gutter={[8, 8]} style={{ marginBottom: 16,  marginTop: 16 }}>
+                                  <Col flex="20%">
+                                      <div style={{ paddingRight: 4 }}>
+                                          {renderRateCard('OIC', selectedLocation.paying_OIC_HourlyRate, '#1890ff')}
+                                      </div>
+                                  </Col>
+                                  <Col flex="20%">
+                                      <div style={{ paddingRight: 4 }}>
+                                          {renderRateCard('JSO', selectedLocation.paying_JSO_HourlyRate, '#52c41a')}
+                                      </div>
+                                  </Col>
+                                  <Col flex="20%">
+                                      <div style={{ paddingRight: 4 }}>
+                                          {renderRateCard('CSO', selectedLocation.paying_CSO_HourlyRate, '#722ed1')}
+                                      </div>
+                                  </Col>
+                                  <Col flex="20%">
+                                      <div style={{ paddingRight: 4 }}>
+                                          {renderRateCard('SSO', selectedLocation.paying_SSO_HourlyRate, '#722ed1')}
+                                      </div>
+                                  </Col>
+                                  <Col flex="20%">{renderRateCard('LSO', selectedLocation.paying_LSO_HourlyRate, '#faad14')}</Col>
+                              </Row>
+                          </Card>
+                      </Card>
+                  )}
+              </Col>
 
-           </div>
+              <Col span={12}>
+                  {selectedSecurity && (
+                      <Card
+                          title={
+                              <div className='p-5'>
+                                  {/* <Title level={4} style={{ color: '#389e0d', marginBottom: 0 }}>
+                                      SELECTED SECURITY
+                                  </Title> */}
+                                  <Image
+                                      src={`/storage/${selectedSecurity.securityPhoto}`}
+                                      alt="Security Photo"
+                                      width={50}
+                                      height={50}
+                                      style={{ borderRadius: '50%', objectFit: 'cover' }}
+                                      preview={false}
+                                  />
+                                  <Text type="secondary">{selectedSecurity.securityId}</Text>
+                              </div>
+                          }
+                      >
+                          <Text strong>Details</Text>
+                          <Text style={{ display: 'block' }}>{selectedSecurity.securityName}</Text>
+                      </Card>
+                  )}
+              </Col>
+          </Row>
 
-            <Steps current={current} items={items} />
-            <div style={contentStyle}>{steps[current].content}</div>
-            <div style={{ marginTop: 24 }}>
-                {current < steps.length - 1 && (
-                    <Button disabled={(selectedLocation === null && current===0) || (selectedSecurity === null && current===1)} type="primary" onClick={() => next()}>
-                        Next
-                    </Button>
-                )}
-                {current === steps.length - 1 && (
-                    <Button disabled={selectedSecurity === null}  type="primary" onClick={() => message.success('Processing complete!')}>
-                        Done
-                    </Button>
-                )}
-                {current > 0 && (
-                    <Button style={{ margin: '0 8px' }} onClick={() => prev()}>
-                        Previous
-                    </Button>
-                )}
-            </div>
-        </div>
-    );
+          <Steps current={current} items={items} />
+          <div style={contentStyle}>{steps[current].content}</div>
+          <div style={{ marginTop: 24 }}>
+              {current < steps.length - 1 && (
+                  <Button
+                      disabled={(selectedLocation === null && current === 0) || (selectedSecurity === null && current === 1)}
+                      type="primary"
+                      onClick={() => next()}
+                  >
+                      Next
+                  </Button>
+              )}
+              {current === steps.length - 1 && (
+                  <Button disabled={selectedSecurity === null} type="primary" onClick={() => message.success('Processing complete!')}>
+                      Done
+                  </Button>
+              )}
+              {current > 0 && (
+                  <Button style={{ margin: '0 8px' }} onClick={() => prev()}>
+                      Previous
+                  </Button>
+              )}
+          </div>
+      </div>
+  );
 };
 
 export default AsignSecuirty;

@@ -7,6 +7,8 @@ import EditLocation from './EditLocation';
 import { deleteLocation, getLocation } from '@/services/location.service';
 import Security from '@/types/jk/security';
 import { removeSecurityFromLocation } from '@/services/securityLocationAllocation.service';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 const { Title, Text } = Typography;
 interface Locations {
     locationId: any,
@@ -39,6 +41,10 @@ export default function ManageLocations() {
 
     const [locations, setLocations] = useState<Locations[]>([]);
 
+      const [loading, setLoading] = useState(false);
+
+  const { notifySuccess, notifyError, contextHolder } = useNotification(); 
+
     const showModal = () => {
         setIsModalOpen(true);
     };
@@ -62,9 +68,21 @@ export default function ManageLocations() {
     };
 
     const handleDelete = async(record: Locations) => {
-        const result = await deleteLocation(record.locationId);
-        console.log(result);
-        fetchLocations();
+        try {
+            setLoading(true);
+            const result = await deleteLocation(record.locationId);
+            if (result.status === 200) {
+                 fetchLocations();
+            }else{
+                notifyError('ERROR', 'Failed to delete location');
+            }
+        } catch (error) {
+            notifyError('ERROR', 'Failed to delete location');
+            return;
+        }finally {
+            setLoading(false);
+            notifySuccess('Success', 'Location deleted successfully');
+        }
     };
 
     const saveEditedLocation = (location: any) => {};
@@ -125,19 +143,37 @@ export default function ManageLocations() {
         },
     ];
 
-    const fetchLocations = async()=>{
-        const result = await getLocation();
-        console.log(result)
-        setLocations(result.data);
+    const fetchLocations = async () => {
+        try {
+           setLoading(true);
+           const result = await getLocation();
+           setLocations(result.data);
+        } catch (error) {
+            console.error('Error fetching locations:', error);
+            notifyError('ERROR', 'Failed to fetch locations');
+        } finally {
+            setLoading(false);
+        }
     }
 
-    const onRemove = async(security:string)=>{
-        console.log(security, viewLocation?.locationId)
-        const result = await removeSecurityFromLocation(security, viewLocation?.locationId);
-        console.log(result);
-        fetchLocations();
-        setIsModalOpen(false);
-
+    const onRemove = async (security: string) => {
+        setLoading(true);
+         try {
+           const result = await removeSecurityFromLocation(security, viewLocation?.locationId);
+           if (result.status === 200) {
+               fetchLocations();
+               setTimeout(() => {
+                setIsModalOpen(false);
+               }, 1000);
+           } else {
+               notifyError('Error', 'Failed to remove security');
+           }
+        } catch (error) {
+            notifyError('Error', 'Failed to remove security');
+        } finally {
+             notifySuccess('SUCCESS', 'Security removed from location successfully');
+            setLoading(false);
+        }
     }
 
     useEffect(()=>{
@@ -178,12 +214,17 @@ export default function ManageLocations() {
 
     return (
         <div className="rounded-2xl bg-gray-100 p-10 pt-10 pb-10 shadow-md">
-            <button
+            {contextHolder}
+            {loading && <Loader/> }
+
+           { !toEditLcoation && !showCreate &&
+             <Button
                 onClick={() => setShowCreate(true)}
-                className="mb-10 cursor-pointer! rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-md transition hover:bg-blue-700"
-            >
+                type="primary" 
+                className="mb-10">
                 + Add New Location
-            </button>
+            </Button>
+           }
 
             {!toEditLcoation && showCreate && <CreateLocation handleCancel={() =>{fetchLocations(); setShowCreate(false)}}></CreateLocation>}
 

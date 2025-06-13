@@ -6,6 +6,8 @@ import { UserOutlined, ShoppingOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import Security from '@/types/jk/security';
 import { allocateInventory, saveAsset } from '@/services/security-managment.service';
+import Loader from '@/components/ui/loader';
+import useNotification from '@/hooks/useNotification';
 
 interface InventoryType {
   id: number;
@@ -48,6 +50,10 @@ const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryIte
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
   
+  const [loading, setLoading] = useState(false);
+
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
+
   const { data, setData, post, processing } = useForm<any>({
     security_id: '',
     items: [],
@@ -57,12 +63,10 @@ const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryIte
   });
 
   const handleSubmit = async () => {
-    console.log(data);
-
-    const result = await allocateInventory(data);
-    console.log(result.data);
-
-    if(result.data){
+    setLoading(true);
+    try {
+       const result = await allocateInventory(data);
+       if(result.data){
       const assetSaveReq = {
         "security_id": data.security_id,
         "items": data.items.map((itm: any)=> {
@@ -73,9 +77,19 @@ const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryIte
         })
       }
       const res = await saveAsset(assetSaveReq);
-      console.log(res.data);
+      setTimeout(() => {
+        onSuccess?.();
+        onCancel();
+        }, 1000);
+     }
+    } catch (error) {
+      notifyError('ERROR', 'Failed to allocate inventory');
+      setLoading(false);
+      return;
+    }finally{
+      notifySuccess('SUCCESS', 'Inventory allocated successfully');
+      setLoading(false);
     }
-   
 
   };
 
@@ -139,6 +153,8 @@ const AllocationForm: React.FC<AllocationFormProps> = ({ employees, inventoryIte
 
   return (
       <div className="p-10 pt-0">
+         {contextHolder}
+      {loading && <Loader/>}
           <Card>
               <Form layout="vertical" onFinish={handleSubmit}>
                   <Form.Item label="Security Officer" required>

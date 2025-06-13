@@ -24,6 +24,8 @@ import { getAllSecurities } from '@/services/security-managment.service';
 import Security from '@/types/jk/security';
 import Location from '@/types/jk/location';
 import type { TabsProps } from 'antd';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 const { Option } = Select;
 const { TabPane } = Tabs;
@@ -37,26 +39,34 @@ export default function SecurityShiftLogManager() {
   const [loading, setLoading] = useState(false);
   const [filterSecurity, setFilterSecurity] = useState(null);
 
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
+
   useEffect(() => {
     loadSecurities();
     loadAllShifts();
   }, []);
 
   const loadSecurities = async () => {
+    setLoading(true);
     try {
       const { data } = await getAllSecurities();
       setSecurities(data);
     } catch {
-      message.error('Failed to load securities');
+      notifyError('ERROR', 'Failed to load securities');
+    }finally {
+      setLoading(false);
     }
   };
 
   const loadLocations = async (securityId: any) => {
+    setLoading(true);
     try {
       const { data } = await getLocationsOfSecurity(securityId);
       setLocations(data);
     } catch {
-      message.error('Failed to load locations');
+      notifyError('ERROR', 'Failed to load locations');
+    }finally {
+      setLoading(false);
     }
   };
 
@@ -66,7 +76,7 @@ export default function SecurityShiftLogManager() {
       const { data } = await getAllShiftLogs();
       setShifts(data);
     } catch {
-      message.error('Failed to load shifts');
+      notifyError('ERROR', 'Failed to load shifts');
     } finally {
       setLoading(false);
     }
@@ -78,7 +88,7 @@ export default function SecurityShiftLogManager() {
       const { data } = await getShiftsBySecurityId(securityId);
       setShifts(data);
     } catch {
-      message.error('Failed to filter shifts');
+      notifyError('ERROR', 'Failed to filter shifts');
     } finally {
       setLoading(false);
     }
@@ -90,6 +100,7 @@ export default function SecurityShiftLogManager() {
   };
 
   const handleSubmit = async (values: any) => {
+    setLoading(true);
     try {
       const payload = {
         ...values,
@@ -98,23 +109,28 @@ export default function SecurityShiftLogManager() {
         end_time: values.end_time.format('HH:mm'),
       };
       await createShiftLog(payload);
-      message.success('Shift logged');
+      notifySuccess('SUCCESS', 'Shift logged');
       form.resetFields();
       setLocations([]);
       setSelectedSecurity(null);
       loadAllShifts();
     } catch {
       message.error('Failed to log shift');
+    }finally {
+      setLoading(false);
     }
   };
 
   const handleDelete = async (id: any) => {
+    setLoading(true);
     try {
       await deleteShiftLog(id);
-      message.success('Shift deleted');
+      notifySuccess('SUCCESS', 'Shift deleted successfully');
       loadAllShifts();
     } catch {
-      message.error('Delete failed');
+      notifyError('ERROR', 'Delete failed');
+    }finally{
+      setLoading(false);
     }
   };
 
@@ -239,10 +255,9 @@ const items: TabsProps['items'] = [
 
   return (
     <div className="p-4">
+       {contextHolder}
+      {loading && <Loader/>}
       <Tabs defaultActiveKey="1" items={items}  />;
-     
-
-      
     </div>
   );
 }

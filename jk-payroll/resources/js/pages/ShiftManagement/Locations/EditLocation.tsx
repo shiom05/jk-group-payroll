@@ -1,3 +1,5 @@
+import Loader from '@/components/ui/loader';
+import useNotification from '@/hooks/useNotification';
 import { editLocation } from '@/services/location.service';
 import { Button, Checkbox, Col, Form, Input, InputNumber, Row } from 'antd';
 import { useEffect, useState } from 'react';
@@ -28,12 +30,25 @@ interface EditLocationProps {
 }
 
 const EditLocation = ({ initialValues, onCancel }: EditLocationProps) => {
+      const [loading, setLoading] = useState(false);
+
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
 
     const handleSubmit = async(values: any) => {
-        console.log(initialValues.locationId,values);
-        const result = await editLocation( initialValues.locationId, values);
-        console.log(result);
-        resetForm();
+        setLoading(true);
+        try {
+            const result = await editLocation( initialValues.locationId, values);
+            if (result.status === 200) {
+                 setTimeout(() => {
+                    resetForm();
+                }, 1000);
+            }  
+        } catch (error) {
+            notifyError('Error', 'Failed to update location');
+        } finally {
+            setLoading(false);
+            notifySuccess('Success', 'Location updated successfully');
+        }
     };
 
     const resetForm = () => {
@@ -49,6 +64,8 @@ const EditLocation = ({ initialValues, onCancel }: EditLocationProps) => {
 
     return (
         <div className="mb-10">
+             {contextHolder}
+      {loading && <Loader/>}
             <Form
                 form={form}
                 onFinish={handleSubmit}

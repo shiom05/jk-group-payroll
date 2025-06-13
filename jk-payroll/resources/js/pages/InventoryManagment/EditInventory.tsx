@@ -1,7 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { editInventoryitems, saveInventory } from '@/services/security-managment.service';
-// import { updateInventory, restockInventory } from '@/services/security-management.service';
+import { 
+  Form, 
+  Input, 
+  Select, 
+  DatePicker, 
+  Button, 
+  Card, 
+  Typography, 
+  Row, 
+  Col,
+  Tabs,
+  message
+} from 'antd';
+import dayjs from 'dayjs';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
+
+const { Title } = Typography;
+const { TabPane } = Tabs;
+const { Option } = Select;
 
 interface InventoryType {
   id: number;
@@ -32,8 +51,13 @@ interface EditInventoryProps {
 }
 
 const EditInventory: React.FC<EditInventoryProps> = ({ item, types, handleBack, onSuccess }) => {
-  const [mode, setMode] = useState<'edit' | 'restock'>('edit');
+  const [form] = Form.useForm();
+  const [restockForm] = Form.useForm();
   const [selectedType, setSelectedType] = useState<InventoryType | null>(item.inventory_type || null);
+
+    const [loading, setLoading] = useState(false);
+  
+    const { notifySuccess, notifyError, contextHolder } = useNotification(); 
   
   const { data, setData, put, processing, errors } = useForm({
     inventory_type_id: item.inventory_type_id.toString(),
@@ -45,50 +69,69 @@ const EditInventory: React.FC<EditInventoryProps> = ({ item, types, handleBack, 
     last_restocked_at: item.last_restocked_at?.split('T')[0]
   });
 
-  const restockForm = useForm({
+  const restockFormData = useForm({
     restock_quantity: 1,
     restock_date: new Date().toISOString().split('T')[0],
   });
 
   useEffect(() => {
     setSelectedType(types.find(t => t.id === item.inventory_type_id) || null);
+    form.setFieldsValue({
+      ...data,
+      purchase_date: dayjs(data.purchase_date),
+      last_restocked_at: data.last_restocked_at ? dayjs(data.last_restocked_at) : null
+    });
+    restockForm.setFieldsValue({
+      restock_quantity: 1,
+      restock_date: dayjs()
+    });
   }, [item, types]);
 
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const typeId = e.target.value;
-    const type = types.find((t: any) => t.id == typeId) || null;
+  const handleTypeChange = (value: string) => {
+    const type = types.find((t: any) => t.id == value) || null;
     setSelectedType(type);
-    setData('inventory_type_id', typeId);
+    setData('inventory_type_id', value);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: any) => {
     try {
+      setLoading(true);
       await editInventoryitems(item.id, {
         ...item,
         ...data
       });
-      onSuccess?.();
-      handleBack();
+      notifySuccess("SUCCESS",'Inventory item updated successfully');
+      setTimeout(() => {
+        onSuccess?.(); 
+        handleBack();
+      }, 1000);
     } catch (error) {
       console.error('Error updating inventory:', error);
+      notifyError("ERROR",'Failed to update inventory item');
+    }finally {
+      setLoading(false);
     }
   };
 
-  const handleRestockSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRestockSubmit = async (values: any) => {
     try {
-     const {data: {restock_date, restock_quantity }} = restockForm;
-
+      setLoading(true);
+      console.log('Restock values:', restockFormData.data);
       await saveInventory({
         ...item,
-        last_restocked_at: restock_date,
-        quantity: restock_quantity
+        last_restocked_at: restockFormData.data.restock_date,
+        quantity: restockFormData.data.restock_quantity
       });
-      onSuccess?.();
-      handleBack();
+      notifySuccess("SUCCESS",'Inventory restocked successfully');
+      setTimeout(() => {
+        onSuccess?.(); 
+        handleBack();
+      }, 1000);
     } catch (error) {
       console.error('Error restocking inventory:', error);
+      notifyError("ERROR",'Failed to restock inventory');
+    }finally {
+      setLoading(false);
     }
   };
 
@@ -104,255 +147,244 @@ const EditInventory: React.FC<EditInventoryProps> = ({ item, types, handleBack, 
   };
 
   return (
-    <div className="py-12">
-      <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
-        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold">
-              {mode === 'edit' ? 'Edit Inventory Item' : 'Restock Inventory Item'}
-            </h2>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setMode('edit')}
-                className={`px-4 py-2 rounded-md ${mode === 'edit' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => setMode('restock')}
-                className={`px-4 py-2 rounded-md ${mode === 'restock' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              >
-                Restock
-              </button>
-            </div>
-          </div>
+    <div style={{ padding: '24px' }}>
+       {contextHolder}
+      {loading && <Loader/>} 
+      <Row justify="center">
+        <Col xs={24} lg={18}>
+          <Card>
+            <Title level={2} style={{ marginBottom: '24px' }}>Inventory Item</Title>
+            
+            <Tabs defaultActiveKey="edit">
+              <TabPane tab="Edit Item" key="edit">
+                <Form
+                  form={form}
+                  layout="vertical"
+                  onFinish={handleSubmit}
+                  initialValues={{
+                    ...data,
+                    purchase_date: dayjs(data.purchase_date),
+                    last_restocked_at: data.last_restocked_at ? dayjs(data.last_restocked_at) : null
+                  }}
+                >
+                  <Row gutter={16}>
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label="Item Type"
+                        name="inventory_type_id"
+                        validateStatus={errors.inventory_type_id ? 'error' : ''}
+                        help={errors.inventory_type_id}
+                        rules={[{ required: true, message: 'Please select item type' }]}
+                      >
+                        <Select
+                          placeholder="Select Type"
+                          onChange={handleTypeChange}
+                          disabled={processing}
+                        >
+                          {types.map((type) => (
+                            <Option key={type.id} value={type.id.toString()}>
+                              {type.name}
+                            </Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                    </Col>
 
-          {mode === 'edit' ? (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Item Type
-                  </label>
-                  <select
-                    value={data.inventory_type_id}
-                    onChange={handleTypeChange}
-                    className="w-full rounded-md border p-2 shadow-sm"
-                    required
-                    disabled={processing}
-                  >
-                    <option value="">Select Type</option>
-                    {types.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.name}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.inventory_type_id && (
-                    <p className="mt-1 text-sm text-red-600">{errors.inventory_type_id}</p>
-                  )}
-                </div>
+                    {selectedType?.track_size && (
+                      <Col xs={24} md={12}>
+                        <Form.Item
+                          label="Size"
+                          name="size"
+                          validateStatus={errors.size ? 'error' : ''}
+                          help={errors.size}
+                          rules={[{ required: true, message: 'Please select size' }]}
+                        >
+                          <Select placeholder="Select Size" disabled={processing}>
+                            {generateSizes(selectedType.size_range).map((size) => (
+                              <Option key={size} value={size}>
+                                {size}
+                              </Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                    )}
 
-                {selectedType?.track_size && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Size
-                    </label>
-                    <select
-                      value={data.size}
-                      onChange={(e) => setData('size', e.target.value)}
-                      className="w-full rounded-md border p-2 shadow-sm"
-                      required
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label="Condition"
+                        name="condition"
+                        validateStatus={errors.condition ? 'error' : ''}
+                        help={errors.condition}
+                        rules={[{ required: true, message: 'Please select condition' }]}
+                      >
+                        <Select disabled={processing}>
+                          <Option value="new">New</Option>
+                          <Option value="returned">Returned</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label="Current Quantity"
+                        name="quantity"
+                        validateStatus={errors.quantity ? 'error' : ''}
+                        help={errors.quantity}
+                        rules={[{ required: true, message: 'Please enter quantity' }]}
+                      >
+                        <Input 
+                          type="number" 
+                          min={0}
+                          onChange={(e) => setData('quantity', parseInt(e.target.value) || 0)}
+                          disabled={processing}
+                        />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label="Purchase Price"
+                        name="purchase_price"
+                        validateStatus={errors.purchase_price ? 'error' : ''}
+                        help={errors.purchase_price}
+                        rules={[{ required: true, message: 'Please enter purchase price' }]}
+                      >
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          min={0}
+                          onChange={(e) => setData('purchase_price', e.target.value)}
+                          disabled={processing}
+                        />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label="Purchase Date"
+                        name="purchase_date"
+                        validateStatus={errors.purchase_date ? 'error' : ''}
+                        help={errors.purchase_date}
+                        rules={[{ required: true, message: 'Please select purchase date' }]}
+                      >
+                        <DatePicker 
+                          style={{ width: '100%' }}
+                          onChange={(date, dateString: any) => setData('purchase_date', dateString)}
+                          disabled={processing}
+                        />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label="Last Restock Date"
+                        name="last_restocked_at"
+                        validateStatus={errors.last_restocked_at ? 'error' : ''}
+                        help={errors.last_restocked_at}
+                      >
+                        <DatePicker 
+                          style={{ width: '100%' }}
+                          onChange={(date, dateString: any) => setData('last_restocked_at', dateString)}
+                          disabled={processing}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  <Form.Item style={{ marginTop: '32px', textAlign: 'right' }}>
+                    <Button 
+                      style={{ marginRight: '16px' }}
+                      onClick={handleBack}
                       disabled={processing}
                     >
-                      <option value="">Select Size</option>
-                      {generateSizes(selectedType.size_range).map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.size && (
-                      <p className="mt-1 text-sm text-red-600">{errors.size}</p>
-                    )}
-                  </div>
-                )}
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="primary" 
+                      htmlType="submit"
+                      loading={processing}
+                    >
+                      Save Changes
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </TabPane>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Condition
-                  </label>
-                  <select
-                    value={data.condition}
-                    onChange={(e) => setData('condition', e.target.value as 'new' | 'returned')}
-                    className="w-full rounded-md border p-2 shadow-sm"
-                    required
-                    disabled={processing}
-                  >
-                    <option value="new">New</option>
-                    <option value="returned">Returned</option>
-                  </select>
-                  {errors.condition && (
-                    <p className="mt-1 text-sm text-red-600">{errors.condition}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Current Quantity
-                  </label>
-                  <input
-                    type="number"
-                    value={data.quantity}
-                    min="0"
-                    onChange={(e) => setData('quantity', parseInt(e.target.value) || 0)}
-                    className="w-full rounded-md border p-2 shadow-sm"
-                    required
-                    disabled={processing}
-                  />
-                  {errors.quantity && (
-                    <p className="mt-1 text-sm text-red-600">{errors.quantity}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Purchase Price
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={data.purchase_price}
-                    onChange={(e) => setData('purchase_price', e.target.value)}
-                    className="w-full rounded-md border p-2 shadow-sm"
-                    required
-                    disabled={processing}
-                  />
-                  {errors.purchase_price && (
-                    <p className="mt-1 text-sm text-red-600">{errors.purchase_price}</p>
-                  )}
-                </div>
-              
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Purchase Date
-                  </label>
-                  <input
-                    type="date"
-                    value={data.purchase_date}
-                    onChange={(e) => setData('purchase_date', e.target.value)}
-                    className="w-full rounded-md border p-2 shadow-sm"
-                    required
-                    disabled={processing}
-                  />
-                  {errors.purchase_date && (
-                    <p className="mt-1 text-sm text-red-600">{errors.purchase_date}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Restock Date
-                  </label>
-                  <input
-                    type="date"
-                    value={data.last_restocked_at}
-                    onChange={(e) => setData('last_restocked_at', e.target.value)}
-                    className="w-full rounded-md border p-2 shadow-sm"
-                    required
-                    disabled={processing}
-                  />
-                  {errors.last_restocked_at && (
-                    <p className="mt-1 text-sm text-red-600">{errors.last_restocked_at}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-4 mt-8">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="rounded-md bg-gray-200 px-4 py-2 text-gray-800 shadow-md transition hover:bg-gray-300"
-                  disabled={processing}
+              <TabPane tab="Restock Item" key="restock">
+                <Form
+                  form={restockForm}
+                  layout="vertical"
+                  onFinish={handleRestockSubmit}
+                  initialValues={{
+                    restock_quantity: 1,
+                    restock_date: dayjs()
+                  }}
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={processing}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-white shadow-md transition hover:bg-blue-700"
-                >
-                  {processing ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form onSubmit={handleRestockSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Current Quantity
-                  </label>
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    className="w-full rounded-md border p-2 shadow-sm bg-gray-100"
-                    readOnly
-                  />
-                </div>
+                  <Row gutter={16}>
+                    <Col xs={24} md={12}>
+                      <Form.Item label="Current Quantity">
+                        <Input 
+                          value={item.quantity} 
+                          readOnly 
+                          disabled={restockFormData.processing}
+                        />
+                      </Form.Item>
+                    </Col>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Quantity to Add
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={restockForm.data.restock_quantity}
-                    onChange={(e) => restockForm.setData('restock_quantity', parseInt(e.target.value) || 1)}
-                    className="w-full rounded-md border p-2 shadow-sm"
-                    required
-                    disabled={restockForm.processing}
-                  />
-                </div>
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label="Quantity to Add"
+                        name="restock_quantity"
+                        rules={[{ required: true, message: 'Please enter quantity to add' }]}
+                      >
+                        <Input 
+                          type="number" 
+                          min={1}
+                          onChange={(e) => restockFormData.setData('restock_quantity', parseInt(e.target.value) || 1)}
+                          disabled={restockFormData.processing}
+                        />
+                      </Form.Item>
+                    </Col>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Restock Date
-                  </label>
-                  <input
-                    type="date"
-                    value={restockForm.data.restock_date}
-                    onChange={(e) => restockForm.setData('restock_date', e.target.value)}
-                    className="w-full rounded-md border p-2 shadow-sm"
-                    required
-                    disabled={restockForm.processing}
-                  />
-                </div>
-              </div>
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label="Restock Date"
+                        name="restock_date"
+                        rules={[{ required: true, message: 'Please select restock date' }]}
+                      >
+                        <DatePicker 
+                          style={{ width: '100%' }}
+                          onChange={(date, dateString: any) => restockFormData.setData('restock_date', dateString)}
+                          disabled={restockFormData.processing}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
 
-              <div className="flex justify-end space-x-4 mt-8">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="rounded-md bg-gray-200 px-4 py-2 text-gray-800 shadow-md transition hover:bg-gray-300"
-                  disabled={restockForm.processing}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={restockForm.processing}
-                  className="rounded-md bg-green-600 px-4 py-2 text-white shadow-md transition hover:bg-green-700"
-                >
-                  {restockForm.processing ? 'Restocking...' : 'Restock Item'}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
+                  <Form.Item style={{ marginTop: '32px', textAlign: 'right' }}>
+                    <Button 
+                      style={{ marginRight: '16px' }}
+                      onClick={handleBack}
+                      disabled={restockFormData.processing}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="primary" 
+                      htmlType="submit"
+                      loading={restockFormData.processing}
+                      style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                    >
+                      Restock Item
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </TabPane>
+            </Tabs>
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };
