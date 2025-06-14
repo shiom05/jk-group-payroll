@@ -12,6 +12,7 @@ import {
   SecurityBlackMark
 } from '@/services/blackmark.service';
 import Security from '@/types/jk/security';
+import useNotification from '@/hooks/useNotification';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -27,8 +28,8 @@ interface BlackMarkFormProps{
 const BlackMarkForm = ({idEditing, BlackMark, onCancel, security}:BlackMarkFormProps) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [status, setStatus] = useState('pending');
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
 
   useEffect(() => {
     const loadData = async () => {
@@ -45,7 +46,7 @@ const BlackMarkForm = ({idEditing, BlackMark, onCancel, security}:BlackMarkFormP
         }
       } catch (err) {
         console.error(err);
-        setError('Failed to load data.');
+        notifyError('ERROR', 'Failed to load data.');
       } finally {
         setLoading(false);
       }
@@ -57,8 +58,6 @@ const BlackMarkForm = ({idEditing, BlackMark, onCancel, security}:BlackMarkFormP
   const handleFinish = async (values: any) => {
     try {
       setLoading(true);
-      setError('');
-
       const payload = {
         ...values,
         security_id: security.securityId,
@@ -73,9 +72,12 @@ const BlackMarkForm = ({idEditing, BlackMark, onCancel, security}:BlackMarkFormP
         await createBlackMark(payload);
       }
 
-      onCancel();
+      notifySuccess('SUCCESS', 'Black mark saved successfully');
+      setTimeout(() => {
+        onCancel();
+      }, 1000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred');
+      notifyError('ERROR', err.response?.data?.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -92,7 +94,7 @@ const BlackMarkForm = ({idEditing, BlackMark, onCancel, security}:BlackMarkFormP
   return (
     <Card  style={{ maxWidth: 900, margin: 'auto' }} className='mt-20!'>
       <Title level={4}>{idEditing ? 'Edit Black Mark' : 'Add Black Mark'}</Title>
-      {error && <Alert type="error" message={error} style={{ marginBottom: 16 }} />}
+        {contextHolder}
       <Spin spinning={loading}>
         <Form
           form={form}
@@ -178,7 +180,7 @@ const BlackMarkForm = ({idEditing, BlackMark, onCancel, security}:BlackMarkFormP
                     <InputNumber
                       style={{ width: '100%' }}
                       min={0}
-                      prefix="$"
+                      prefix="Rs."
                     />
                   </Form.Item>
                 </Col>

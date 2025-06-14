@@ -121,16 +121,59 @@ class SecurityBlackMarkController extends Controller
         return response()->json($blackMark, 201);
     }
 
+    // public function update(UpdateSecurityBlackMarkRequest $request, $id)
+    // {
+    //     $blackMark = SecurityBlackMark::findOrFail($id);
+
+    //     $validated = $request->validate([
+    //         'inquiry_details' => 'required|string|max:2000',
+    //         'fine_amount' => 'required|numeric|min:0',
+    //         'fine_effective_date' => 'required|date|after_or_equal:incident_date',
+    //         'status' => ['required', Rule::in(['pending', 'completed'])],
+    //     ]);
+
+    //     $blackMark->update($validated);
+
+    //     return response()->json($blackMark);
+    // }
+
     public function update(UpdateSecurityBlackMarkRequest $request, $id)
     {
         $blackMark = SecurityBlackMark::findOrFail($id);
 
-        $validated = $request->validate([
-            'inquiry_details' => 'required|string|max:2000',
-            'fine_amount' => 'required|numeric|min:0',
-            'fine_effective_date' => 'required|date|after_or_equal:incident_date',
+        $validationRules = [
             'status' => ['required', Rule::in(['pending', 'completed'])],
-        ]);
+        ];
+
+        if($request->input('status') === 'pending' && $blackMark->status === 'completed'){
+        return response()->json([
+                'message' => 'Status change not allowed',
+                'errors' => [
+                    'status' => ['Cannot change status from completed back to pending']
+                ]
+            ], 422);
+        }
+
+        // If status is pending or being changed to pending, require these fields
+        if ($request->input('status') === 'completed' || $blackMark->status === 'completed') {
+            $validationRules['inquiry_details'] = 'required|string|max:2000';
+            $validationRules['fine_amount'] = 'required|numeric|min:0';
+            $validationRules['fine_effective_date'] = 'required|date|after_or_equal:incident_date';
+        }
+    
+        // Always require the store method fields to be present for update
+        $validationRules['security_id'] = 'required|exists:securities,securityId';
+        $validationRules['type'] = ['required', Rule::in([
+            'Theft',
+            'Vacate a Point',
+            'Alcohol/Drug',
+            'Leave end date not return',
+            'Other'
+        ])];
+        $validationRules['incident_description'] = 'required|string|max:1000';
+        $validationRules['incident_date'] = 'required|date';
+
+        $validated = $request->validate($validationRules);
 
         $blackMark->update($validated);
 

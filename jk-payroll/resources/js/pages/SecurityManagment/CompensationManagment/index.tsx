@@ -12,6 +12,8 @@ import {
 import dayjs from 'dayjs';
 import Security from '@/types/jk/security';
 import { PlusCircleFilled, EditOutlined } from '@ant-design/icons';
+import useNotification from '@/hooks/useNotification';
+import Loader from '@/components/ui/loader';
 
 interface CompensationSecurityProps {
   security: Security;
@@ -22,6 +24,10 @@ const CompensationSecurity = ({ security }: CompensationSecurityProps) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [editingCompensation, setEditingCompensation] = useState<SecurityCompensation | null>(null);
   const [form] = Form.useForm();
+
+  const [loading, setLoading] = useState(false);
+
+  const { notifySuccess, notifyError, contextHolder } = useNotification();
 
   useEffect(() => {
     loadCompensations();
@@ -54,16 +60,20 @@ const CompensationSecurity = ({ security }: CompensationSecurityProps) => {
 
   const handleDelete = async (id: number) => {
     try {
+      setLoading(true);
       await deleteCompensation(id);
-      message.success('Compensation deleted');
+      notifySuccess('SUCCESS', 'Compensation deleted');
       loadCompensations();
     } catch (error) {
-      message.error('Failed to delete compensation');
+      notifyError('ERROR', 'Failed to delete compensation');
+    }finally {
+      setLoading(false);
     }
   };
 
   const handleSubmit = async () => {
     try {
+      setLoading(true);
       const values = await form.validateFields();
       const compensationData = {
         ...values,
@@ -73,16 +83,17 @@ const CompensationSecurity = ({ security }: CompensationSecurityProps) => {
 
       if (editingCompensation) {
         await updateCompensation({ ...compensationData, id: editingCompensation.id });
-        message.success('Compensation updated');
+        notifySuccess('SUCCESS', 'Compensation updated');
       } else {
         await createCompensation(compensationData);
-        message.success('Compensation created');
+        notifySuccess('SUCCESS', 'Compensation created');
       }
-
       setDrawerVisible(false);
       loadCompensations();
     } catch (error) {
-      message.error('Failed to submit compensation');
+      notifyError('ERROR', 'Failed to submit compensation');
+    }finally {
+      setLoading(false);
     }
   };
 
@@ -118,7 +129,7 @@ const CompensationSecurity = ({ security }: CompensationSecurityProps) => {
                       >
                           Edit
                       </Button>
-                      <Popconfirm title="Remove this Black Mark?" onConfirm={() => handleDelete(record.id!)} okText="Yes" cancelText="No">
+                      <Popconfirm title="Remove this Compensation?" onConfirm={() => handleDelete(record.id!)} okText="Yes" cancelText="No">
                           <Button danger>Remove</Button>
                       </Popconfirm>
                   </div>
@@ -129,6 +140,8 @@ const CompensationSecurity = ({ security }: CompensationSecurityProps) => {
 
   return (
       <div style={{ padding: 24 }} className="mt-0">
+         {contextHolder}
+         {loading && <Loader />}
           <Typography.Title level={2} style={{ marginBottom: 20 }}>
               Security Compensation Managment
           </Typography.Title>

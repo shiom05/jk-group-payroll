@@ -46,8 +46,8 @@ export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps
           return;
       }
 
-      const formattedDate = typeof data.date === 'string' ? data.date : dayjs(data.date).format('YYYY-MM-DD');
-
+      // const formattedDate = typeof data.date === 'string' ? data.date : dayjs(data.date).format('YYYY-MM-DD');
+       const formattedDate = data.date;
       if (mode === 'general' && data.type === 'Loan') {
          notifyError('ERROR', 'Loans can only be added to securities');
           return;
@@ -152,12 +152,14 @@ export default function ExpenseForm({ securityList, onCancel }: ExpenseFormProps
           </Form.Item>
         )}
         <Form.Item label={data.type==="Loan"?"Loan Start Date":"Date"} required>
-          <DatePicker
-            className="w-full"
-            value={data.date ? dayjs(data.date) : undefined}
-            onChange={(date) => setData('date', date ? date.toISOString() : '')}
-          />
-        </Form.Item>
+        <DatePicker
+          className="w-full"
+          value={data.date ? dayjs(data.date) : undefined}
+          onChange={(date) => {
+            setData('date', date ? date.format('YYYY-MM-DD') : null)
+          }}
+        />
+      </Form.Item>
 
         <Form.Item label="Amount (LKR)" required>
           <InputNumber

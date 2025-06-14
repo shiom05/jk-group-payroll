@@ -5,6 +5,7 @@ import { Button, Card, Drawer, Popconfirm, Select, Space, Spin, Table, Tag, Typo
 import { useEffect, useState } from 'react';
 import BlackMarkForm from './BlackMarkForm';
 import BlackMarkView from './BlackMarkView';
+import useNotification from '@/hooks/useNotification';
 
 const { Option } = Select;
 
@@ -15,11 +16,12 @@ interface BlackMarksListProps {
 const BlackMarksList = ({ security }: BlackMarksListProps) => {
     const [blackMarks, setBlackMarks] = useState<SecurityBlackMark[]>([]);
     const [loading, setLoading] = useState(true);
-    const [statusFilter, setStatusFilter] = useState('pending');
+    const [statusFilter, setStatusFilter] = useState('');
 
     const [isAdd, setIsAdd] = useState<boolean>(false);
     const [isView, setView] = useState<SecurityBlackMark | null>(null);
     const [toEdit, setToEdit] = useState<SecurityBlackMark | null>(null);
+    const { notifySuccess, notifyError, contextHolder } = useNotification();
 
     const loadData = async () => {
             try {
@@ -27,20 +29,20 @@ const BlackMarksList = ({ security }: BlackMarksListProps) => {
                 if (statusFilter === '') {
                     const data = await fetchBlackMarks({security_id: security.securityId});
                     setBlackMarks(data);
+                    
                 } else {
                     const data = await fetchBlackMarks({ status: statusFilter, security_id: security.securityId });
                     setBlackMarks(data);
                 }
             } catch (error) {
                 console.error('Error loading black marks:', error);
+                notifyError('ERROR', 'Failed to load black marks');
             } finally {
                 setLoading(false);
             }
         };
 
     useEffect(() => {
-        
-
         loadData();
     }, [statusFilter]);
 
@@ -169,6 +171,7 @@ const BlackMarksList = ({ security }: BlackMarksListProps) => {
                         onCancel={() => {
                             setIsAdd(false);
                             setToEdit(null);
+                            loadData()
                             onClose();
                         }}
                     />
