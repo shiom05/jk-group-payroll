@@ -62,6 +62,11 @@ interface PayrollRecord {
 }
 
 export const generatePayrollPDF = (records: PayrollRecord[], dateSelected: string) => {
+  if (!dateSelected) {
+      console.error('No date selected for PDF generation.');
+      return false;
+    }
+  try {
   const doc = new jsPDF();
 
   records.forEach((record, index) => {
@@ -121,9 +126,14 @@ export const generatePayrollPDF = (records: PayrollRecord[], dateSelected: strin
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, doc.internal.pageSize.height - 10);
   });
 
- const [year, month] = dateSelected.split('-');
-const date = new Date(parseInt(year), parseInt(month) - 1); // month is 0-based
-const formattedMonth = date.toLocaleString('default', { month: 'long', year: 'numeric' }); // e.g., May 2025
-doc.save(`payroll-report-${formattedMonth.replace(' ', '-')}.pdf`);
+  const [year, month] = dateSelected.split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1); // month is 0-based
+  const formattedMonth = date.toLocaleString('default', { month: 'long', year: 'numeric' }); // e.g., May 2025
+  doc.save(`payroll-report-${formattedMonth.replace(' ', '-')}.pdf`);
 //   doc.save(`payroll-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+  return true;
+  } catch (error) {
+    console.error('Error generating payroll PDF:', error);
+    return false;
+  }
 };

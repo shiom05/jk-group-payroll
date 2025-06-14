@@ -5,6 +5,7 @@ import Security from '@/types/jk/security';
 import { Card, Table, Typography, Input, InputNumber, Checkbox, Button } from 'antd';
 import { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
+import useNotification from '@/hooks/useNotification';
 const { Title, Text } = Typography;
 
 interface PayslipPorps {
@@ -27,6 +28,9 @@ const PayslipComponent = ({ totalShifts, expenses, inventoryExpenses, security, 
 
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
+;
+
+    const { notifySuccess, notifyError, contextHolder } = useNotification();
     
     const formatNumber = (num: number) => {
         return num.toLocaleString('en-US', {
@@ -337,10 +341,10 @@ const PayslipComponent = ({ totalShifts, expenses, inventoryExpenses, security, 
         if (response.status === 201) {
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 3000);
+            notifySuccess('SUCCESS', 'Payroll saved successfully');
         }
     } catch (error) {
-        console.error('Error saving payroll:', error);
-        // Handle error (show notification, etc.)
+        notifyError('ERROR', 'Failed to save payroll');
     } finally {
         setIsSaving(false);
     }
@@ -350,6 +354,7 @@ const PayslipComponent = ({ totalShifts, expenses, inventoryExpenses, security, 
         <Card
             title={   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', flexDirection:'column', justifyContent: 'space-between', padding: '8px 0' }}>
+           {contextHolder}
            <Title style={{ margin: '0' }} level={3}>Monthly Payslip - {monthYear}</Title>
             { existingPayroll && <Title style={{ margin: '0' }} level={5}>Last updated - {dayjs(existingPayroll.updated_at).format('YYYY-MM-DD')}</Title>} 
             </div>

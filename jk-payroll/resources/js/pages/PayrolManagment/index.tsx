@@ -11,6 +11,8 @@ import { fetchDeductibleBlackMarks, SecurityBlackMark } from '@/services/blackma
 import dayjs, { Dayjs } from 'dayjs';
 import { getCurrentMonthCompensations, SecurityCompensation } from '@/services/compensation.service';
 import { formatPayrollMonth, generatePayrollPDF, getPayrollByMonth, getSecurityPayrollByMonth } from '@/services/payroll.service';
+import Loader from '@/components/ui/loader';
+import useNotification from '@/hooks/useNotification';
 
 const { Title } = Typography;
 
@@ -32,6 +34,9 @@ const PayrolManagment = () => {
     const [form] = Form.useForm();
     const [selectedDate, setSelectedDate] = useState<any>(null); // State variable for selected date
 
+
+   const [loader, setLoader] = useState<boolean>(false);
+   const { notifySuccess, notifyError, contextHolder } = useNotification();
 
     const columns: ColumnsType<Security> = [
         {
@@ -81,48 +86,89 @@ const PayrolManagment = () => {
     ];
 
     const fetchSecurites = async () => {
-        const result = await getAllSecurities();
-        setSecurites(result.data);
+        try {
+            setLoader(true);
+            const response = await getAllSecurities();
+            if (response.data) {
+                setSecurites(response.data);
+            } else {
+                notifyError('ERROR', 'No securities found');
+            }
+        } catch (error) {
+            notifyError('ERROR', 'Failed to fetch securities');
+        } finally {
+            setLoader(false);
+        }
     };
-
+ 
     const getCurrentMonthShift = async (security:Security) => {
-        setLoading(true);
+        try {
+            setLoading(true);
         const result = await getCurrentMonthShiftsForSecurity(security.securityId, selectedDate);
         setShiftData(result.data);
-        setLoading(false);
+        } catch (error) {
+            notifyError('ERROR', 'Failed to load shift data');
+        }finally {
+            setLoading(false);
+        }
     };
     const getCurrentMonthExpenses = async (security:Security) => {
-        
-        setLoading(true);
-        const result = await getSecurityCurrentMonthExpenses(security.securityId, selectedDate);
-        setExpenseData(result.data); 
-        setLoading(false);
+        try {
+            setLoading(true);
+            const result = await getSecurityCurrentMonthExpenses(security.securityId, selectedDate);
+            setExpenseData(result.data);
+        } catch (error) {
+            notifyError('ERROR', 'Failed to load expense data');
+        } finally {
+            setLoading(false);
+        }
     };
     const getCurrentMonthInventory = async (security:Security) => {
-        setLoading(true);
-        const result = await getAllocatedInventoriesForSecuriyCurrentMonth(security.securityId, selectedDate);
-        setInventoryData(result.data.total_installment_payments);    
-        setLoading(false); 
+        try {
+            setLoading(true);
+            const result = await getAllocatedInventoriesForSecuriyCurrentMonth(security.securityId, selectedDate);
+            setInventoryData(result.data.total_installment_payments);
+        } catch (error) {
+            notifyError('ERROR', 'Failed to load inventory data');
+        } finally {
+            setLoading(false);
+        }
     };
+    
     const getCurrentMonthLoan = async (security:Security) => {
-        setLoading(true);
-        const result = await getSecurityCurrentMonthPayrollLoans(security.securityId, selectedDate);
-        setLoanData(result.data);    
-        setLoading(false); 
+        try {
+            setLoading(true);
+            const result = await getSecurityCurrentMonthPayrollLoans(security.securityId, selectedDate);
+            setLoanData(result.data);
+        } catch (error) {
+            notifyError('ERROR', 'Failed to load loan data');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const getCurrentMonthFines = async (security:Security) => {
-        setLoading(true);
-        const result = await fetchDeductibleBlackMarks(security.securityId, selectedDate);
-        setFinesData(result);    
-        setLoading(false); 
+        try {
+            setLoading(true);
+            const result = await fetchDeductibleBlackMarks(security.securityId, selectedDate);
+            setFinesData(result);
+        } catch (error) {
+            notifyError('ERROR', 'Failed to load fines data');
+        } finally {
+            setLoading(false);
+        }
     };
 
-       const getCurrentMonthCompenstions = async (security:Security) => {
-        setLoading(true);
-        const result = await getCurrentMonthCompensations(security.securityId, selectedDate);
-        setCompensationData(result);    
-        setLoading(false); 
+    const getCurrentMonthCompenstions = async (security:Security) => {
+        try {
+            setLoading(true);
+            const result = await getCurrentMonthCompensations(security.securityId, selectedDate);
+            setCompensationData(result);
+        } catch (error) {
+            notifyError('ERROR', 'Failed to load compensation data');
+        } finally {
+            setLoading(false);
+        }
     };
 
 
@@ -170,7 +216,7 @@ const PayrolManagment = () => {
                     getCurrentMonthCompenstions(security);
             }
         } catch (error) {
-            console.error('Error loading payroll data:', error);
+            notifyError('ERROR', 'Failed to load payroll data');
         } finally {
             setTimeout(() => {
                 setLoading(false);
@@ -187,14 +233,24 @@ const PayrolManagment = () => {
 
   const handleDownload = ({data}:any) => {
     if (data && data.length > 0) {
-      generatePayrollPDF(data, selectedDate);
+    setLoader(true);
+     const result =  generatePayrollPDF(data, selectedDate);
+     if (result) {
+         notifySuccess('SUCCESS', 'PDF generated successfully');
+         setLoader(false);
+     } else {
+        notifyError('ERROR', 'Failed to generate PDF');
+        setLoader(false);
+     }
     } else {
-      console.warn('No payroll data available to generate PDF');
+      notifyError('ERROR', 'No payroll data available to generate PDF');  
     }
   };
 
     return (
         <Layout>
+            {contextHolder}
+      {loader && <Loader/>}
             <div className="p-10 pt-10">
                 <Title level={2}>
                     {' '}
