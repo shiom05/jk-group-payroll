@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4ccc7332b2a8b5dd86a06b548e8ae7a4",
+    "content-hash": "bff64e2b5a9d93ce3cca49381953cb35",
     "packages": [
         {
             "name": "brick/math",
@@ -6057,16 +6057,16 @@
         },
         {
             "name": "workos/workos-php",
-            "version": "v4.22.0",
+            "version": "v4.24.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/workos/workos-php.git",
-                "reference": "f8d7b964bb9b56c4f980423b840da36b2e6a3370"
+                "reference": "343f1469b8facb24c70239e976e98ebbb214984e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/workos/workos-php/zipball/f8d7b964bb9b56c4f980423b840da36b2e6a3370",
-                "reference": "f8d7b964bb9b56c4f980423b840da36b2e6a3370",
+                "url": "https://api.github.com/repos/workos/workos-php/zipball/343f1469b8facb24c70239e976e98ebbb214984e",
+                "reference": "343f1469b8facb24c70239e976e98ebbb214984e",
                 "shasum": ""
             },
             "require": {
@@ -6097,9 +6097,9 @@
             "homepage": "https://workos.com",
             "support": {
                 "issues": "https://github.com/workos/workos-php/issues",
-                "source": "https://github.com/workos/workos-php/tree/v4.22.0"
+                "source": "https://github.com/workos/workos-php/tree/v4.24.0"
             },
-            "time": "2025-03-21T19:08:31+00:00"
+            "time": "2025-05-22T21:49:09+00:00"
         },
         {
             "name": "workos/workos-php-laravel",

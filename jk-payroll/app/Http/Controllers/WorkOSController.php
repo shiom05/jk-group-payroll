@@ -11,8 +11,6 @@ class WorkOSController extends Controller
     {
         $response = Http::withOptions([
             'verify' => false
-        ])->get('https://api.workos.com/your-endpoint');
-
-        return response()->json($response->json());
+        ])->get('https://api.workos.com/sso/authorize');
     }
 }

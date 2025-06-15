@@ -1,17 +1,17 @@
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import React, { useState } from 'react';
-
-import {
+import { 
   DashboardOutlined,
   SafetyOutlined,
   CalendarOutlined,
   DollarCircleOutlined,
   ScheduleOutlined,
   AppstoreOutlined,
-  PayCircleOutlined
+  PayCircleOutlined,
+  LogoutOutlined
 } from '@ant-design/icons';
-import { Layout as AntDLayout, Menu, theme } from 'antd';
+import { Layout as AntDLayout, Menu, theme, Button, message } from 'antd';
 
 const { Header, Sider, Content } = AntDLayout;
 
@@ -43,7 +43,20 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   const selectedKey = pathToKeyMap[currentPath] || '1';
 
-  const menuItems = () => [
+  const handleLogout = () => {
+    router.post('/logout', {}, {
+      onSuccess: () => {
+        message.success('Logged out successfully');
+        router.visit('/login');
+      },
+      onError: (errors) => {
+        message.error('Logout failed. Please try again.');
+        console.error('Logout error:', errors);
+      }
+    });
+  };
+
+  const menuItems = [
     {
       key: '1',
       icon: <DashboardOutlined />,
@@ -119,7 +132,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               router.get(path);
             }
           }}
-          items={menuItems()}
+          items={menuItems}
         />
       </Sider>
 
@@ -135,9 +148,15 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         >
           <nav className="flex w-full items-center justify-between bg-gradient-to-r from-gray-100 to-gray-300 p-4 text-white">
             {user && (
-              <button className="!cursor-pointer rounded bg-red-600 px-4 py-2 transition hover:bg-red-700">
-                Logout
-              </button>
+              <Button
+                type="primary"
+                danger
+                icon={<LogoutOutlined />}
+                onClick={handleLogout}
+                className="flex items-center"
+              >
+                {!collapsed && 'Logout'}
+              </Button>
             )}
           </nav>
         </Header>
