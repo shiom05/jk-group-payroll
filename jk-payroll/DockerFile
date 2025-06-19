@@ -1,32 +1,118 @@
-# --- Stage 1: Build React ---
-FROM node:20 AS frontend
+# Stage 1: Build frontend assets
+FROM node:18 as frontend
+
 WORKDIR /app
-COPY frontend/package*.json ./
+
+# Copy package files first for better caching
+COPY package.json yarn.lock* package-lock.json* ./
+
+# Install Node dependencies
 RUN npm install
-COPY frontend/ ./
+
+# Copy frontend files
+COPY resources/js ./resources/js
+COPY resources/css ./resources/css
+COPY vite.config.js ./
+COPY postcss.config.js ./
+COPY tailwind.config.js ./
+
+# Build frontend assets
 RUN npm run build
 
-# --- Stage 2: PHP + Laravel ---
-FROM php:8.2-fpm
+# Stage 2: Backend setup
+FROM php:8.2-fpm-alpine as backend
 
-# System dependencies
-RUN apt-get update && apt-get install -y \
-    git curl unzip libzip-dev libpng-dev libonig-dev libxml2-dev sqlite3 libsqlite3-dev \
-    && docker-php-ext-install pdo pdo_sqlite mbstring zip exif pcntl bcmath gd
+WORKDIR /var/www/html
 
-# Composer
+# Install system dependencies including SQLite
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    curl \
+    git \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    oniguruma-dev \
+    libxml2-dev \
+    sqlite-dev \
+    zip \
+    unzip
+
+# Install PHP extensions including SQLite
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
+RUN docker-php-ext-install \
+    pdo_mysql \
+    pdo_sqlite \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip \
+    xml \
+    opcache
+
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Laravel setup
-WORKDIR /var/www/html
+# Copy Laravel files
 COPY . .
 
-# Copy frontend build into Laravel public
-COPY --from=frontend /app/dist/ ./public/
+# Create SQLite database directory
+RUN mkdir -p /var/www/html/database/db
 
+# Copy built assets from frontend stage
+COPY --from=frontend /app/public/build ./public/build
+
+# Install PHP dependencies (excluding dev dependencies)
 RUN composer install --no-dev --optimize-autoloader
-RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
-RUN chmod -R 777 storage bootstrap/cache
 
+# Stage 3: Production image
+FROM php:8.2-fpm-alpine
+
+WORKDIR /var/www/html
+
+# Copy from backend stage
+COPY --from=backend /var/www/html /var/www/html
+COPY --from=backend /usr/bin/composer /usr/bin/composer
+
+# Install runtime dependencies including SQLite
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    sqlite
+
+# Copy nginx and supervisor configs
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Set up storage and database permissions
+RUN chown -R www-data:www-data \
+    /var/www/html/storage \
+    /var/www/html/bootstrap/cache \
+    /var/www/html/database/db
+
+# Create SQLite database file if it doesn't exist
+RUN touch /var/www/html/database/db/database.sqlite
+
+# Environment variables
+ENV APP_ENV=production
+ENV APP_DEBUG=false
+ENV DB_CONNECTION=sqlite
+ENV DB_DATABASE=/var/www/html/database/db/database.sqlite
+
+# Expose ports
 EXPOSE 8080
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8080 || exit 1
+
+# Startup script to run migrations
+COPY docker/startup.sh /usr/local/bin/startup.sh
+RUN chmod +x /usr/local/bin/startup.sh
+
+# Start the application
+CMD ["/usr/local/bin/startup.sh"]   
